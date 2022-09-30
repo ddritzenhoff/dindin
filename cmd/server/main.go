@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"github.com/ddritzenhoff/dindin/internal/configs"
 	"github.com/ddritzenhoff/dindin/internal/cooking"
+	"github.com/ddritzenhoff/dindin/internal/http/rest"
+	"github.com/ddritzenhoff/dindin/internal/http/rpc"
 	"github.com/ddritzenhoff/dindin/internal/person"
-	"github.com/ddritzenhoff/dindin/internal/server/http"
-	"github.com/ddritzenhoff/dindin/internal/server/pb"
 	"github.com/slack-go/slack"
 	"google.golang.org/grpc"
 	"gorm.io/driver/sqlite"
@@ -52,7 +52,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	h, err := http.NewHTTPService(httpCfg, ps)
+	h, err := rest.NewHTTPService(httpCfg, ps)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -63,13 +63,13 @@ func main() {
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}
-	// create a server instance
-	s := pb.NewServer(ces)
-	// create a gRPC server object
+	// create a http instance
+	s := rpc.NewServer(ces)
+	// create a gRPC http object
 	grpcServer := grpc.NewServer()
-	// attach the Ping service to the server
-	pb.RegisterSlackActionsServer(grpcServer, &s)
-	// start the server
+	// attach the Ping service to the http
+	rpc.RegisterSlackActionsServer(grpcServer, &s)
+	// start the http
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %s", err)
 	}

@@ -4,7 +4,7 @@
 // 	protoc        v3.17.3
 // source: pb/dindin.proto
 
-package pb
+package rpc
 
 import (
 	protoreflect "google.golang.org/protobuf/reflect/protoreflect"

@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "github.com/ddritzenhoff/dindin/internal/server/pb";
+option go_package = "github.com/ddritzenhoff/dindin/internal/http/pb";
 package pb;
 
 message EatingTomorrowRequest {

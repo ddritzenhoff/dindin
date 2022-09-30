@@ -2,7 +2,7 @@ package configs
 
 import (
 	"fmt"
-	"github.com/ddritzenhoff/dindin/internal/server/http"
+	"github.com/ddritzenhoff/dindin/internal/http/rest"
 	"log"
 	"os"
 	"strings"
@@ -20,8 +20,8 @@ func (cfg *Configs) DBName() (string, error) {
 	return strings.TrimSpace(dbName), nil
 }
 
-func (cfg *Configs) HTTP() (*http.Config, error) {
-	return &http.Config{
+func (cfg *Configs) HTTP() (*rest.Config, error) {
+	return &rest.Config{
 		Host: "localhost",
 		Port: "8080",
 	}, nil

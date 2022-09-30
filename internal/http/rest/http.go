@@ -1,4 +1,4 @@
-package http
+package rest
 
 import (
 	"fmt"
@@ -13,7 +13,7 @@ type HTTP struct {
 }
 
 func (h *HTTP) Start() {
-	log.Printf("HTTP server listening on host %s and port %s\n", h.config.Host, h.config.Port)
+	log.Printf("HTTP http listening on host %s and port %s\n", h.config.Host, h.config.Port)
 	err := h.server.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {
 		log.Fatal(err)

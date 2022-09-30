@@ -4,7 +4,7 @@
 // - protoc             v3.17.3
 // source: pb/dindin.proto
 
-package pb
+package rpc
 
 import (
 	context "context"
@@ -52,7 +52,7 @@ func (c *slackActionsClient) Ping(ctx context.Context, in *PingMessage, opts ...
 	return out, nil
 }
 
-// SlackActionsServer is the server API for SlackActions service.
+// SlackActionsServer is the http API for SlackActions service.
 // All implementations must embed UnimplementedSlackActionsServer
 // for forward compatibility
 type SlackActionsServer interface {

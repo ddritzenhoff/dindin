@@ -1,11 +1,11 @@
-package pb
+package rpc
 
 import (
 	"context"
 	"github.com/ddritzenhoff/dindin/internal/cooking"
 )
 
-// Server represents the gRPC server
+// Server represents the gRPC http
 type Server struct {
 	eatingService *cooking.EventService
 	UnimplementedSlackActionsServer
@@ -15,7 +15,7 @@ func NewServer(es *cooking.EventService) Server {
 	return Server{eatingService: es}
 }
 
-// Ping generates a response to indicate server is working
+// Ping generates a response to indicate http is working
 func (s *Server) Ping(_ context.Context, in *PingMessage) (*PingMessage, error) {
 	return &PingMessage{Message: in.Message + " received"}, nil
 }
