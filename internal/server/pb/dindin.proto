@@ -1,0 +1,18 @@
+syntax = "proto3";
+option go_package = "github.com/ddritzenhoff/dindin/internal/server/pb";
+package pb;
+
+message EatingTomorrowRequest {
+  string SlackUID = 1;
+}
+
+message EatingTomorrowResponse {}
+
+message PingMessage {
+  string message = 1;
+}
+
+service SlackActions {
+  rpc EatingTomorrow(EatingTomorrowRequest) returns (EatingTomorrowResponse) {}
+  rpc Ping(PingMessage) returns (PingMessage) {}
+}

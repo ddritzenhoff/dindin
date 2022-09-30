@@ -48,8 +48,8 @@ func (s *EventService) GetEatingEvent(slackMessageID string) (_eatingEvent *Even
 	return event, true
 }
 
-func (s *EventService) postEatingTonight(slackUID string) error {
-	_, respTimestamp, err := s.slackClient.PostMessage(s.slackChannel, isEatingTodayBlock())
+func (s *EventService) PostEatingTomorrow(slackUID string) error {
+	_, respTimestamp, err := s.slackClient.PostMessage(s.slackChannel, isEatingTomorrowBlock())
 	if err != nil {
 		return err
 	}
@@ -70,7 +70,7 @@ func (s *EventService) postEatingTonight(slackUID string) error {
 	return nil
 }
 
-func isEatingTodayBlock() slack.MsgOption {
+func isEatingTomorrowBlock() slack.MsgOption {
 	// Header Section
 	headerText := slack.NewTextBlockObject("mrkdwn", "hey <!channel>, please react to this message (:thumbsup:) if you are eating tomorrow", false, false)
 	headerSection := slack.NewSectionBlock(headerText, nil, nil)
