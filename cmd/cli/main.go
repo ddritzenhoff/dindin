@@ -7,23 +7,15 @@ import (
 	"github.com/spf13/cobra"
 )
 
+var rootCmd = &cobra.Command{
+	Use:   "dindin",
+	Short: "dindin is a slack bot to automate dinner rotation",
+	Long:  "dindin keeps track of meals eaten and meals cooked and makes sure that the members with the worst ratios are up to cook next. Additionally, it automatically sends out slack messages during cooking nights to keep track of who's eating",
+}
+
 func main() {
-	var testChannel bool
-	var cmdSlackMessage = &cobra.Command{
-		Use:   "slack",
-		Short: "send a 'is eating' slack message",
-		Run:   cmdSlackMessage,
-	}
-
-	cmdSlackMessage.Flags().BoolVarP(&testChannel, "test", "t", false, "use flag to execute command in the test slack channel")
-
-	var rootCmd = &cobra.Command{
-		Use: "app",
-	}
-
-	rootCmd.AddCommand(cmdSlackMessage)
 	if err := rootCmd.Execute(); err != nil {
-		fmt.Println(err)
+		fmt.Fprintln(os.Stderr, err)
 		os.Exit(1)
 	}
 }
