@@ -2,6 +2,9 @@ package main
 
 import (
 	"fmt"
+	"log"
+	"net"
+
 	"github.com/ddritzenhoff/dindin/internal/configs"
 	"github.com/ddritzenhoff/dindin/internal/cooking"
 	"github.com/ddritzenhoff/dindin/internal/http/rest"
@@ -11,8 +14,6 @@ import (
 	"google.golang.org/grpc"
 	"gorm.io/driver/sqlite"
 	"gorm.io/gorm"
-	"log"
-	"net"
 )
 
 func main() {
@@ -47,19 +48,23 @@ func main() {
 		log.Fatal(err)
 	}
 
-	httpCfg, err := cfg.HTTP()
+	restCfg, err := cfg.REST()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	h, err := rest.NewHTTPService(httpCfg, ps)
+	h, err := rest.NewRESTService(restCfg, ps)
 	if err != nil {
 		log.Fatal(err)
 	}
 	go h.Start()
 
+	grpcCfg, err := cfg.GRPC()
+	if err != nil {
+		log.Fatal(err)
+	}
 	// create a listener on TCP port 7777
-	lis, err := net.Listen("tcp", fmt.Sprintf(":%d", 7777))
+	lis, err := net.Listen("tcp", fmt.Sprintf("%s:%s", grpcCfg.Host, grpcCfg.Port))
 	if err != nil {
 		log.Fatalf("failed to listen: %v", err)
 	}

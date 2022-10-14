@@ -2,9 +2,10 @@ package rest
 
 import (
 	"fmt"
-	"github.com/ddritzenhoff/dindin/internal/person"
 	"log"
 	"net/http"
+
+	"github.com/ddritzenhoff/dindin/internal/person"
 )
 
 type HTTP struct {
@@ -25,7 +26,7 @@ type Config struct {
 	Port string
 }
 
-func NewHTTPService(cfg *Config, personService *person.Service) (*HTTP, error) {
+func NewRESTService(cfg *Config, personService *person.Service) (*HTTP, error) {
 	h := &Handlers{personService: personService}
 	httpServer := &http.Server{
 		Addr:    fmt.Sprintf("%s:%s", cfg.Host, cfg.Port),

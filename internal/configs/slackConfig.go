@@ -1,31 +1,30 @@
 package configs
 
 import (
-	"log"
-	"os"
-	"strings"
+	"fmt"
+
+	"github.com/spf13/viper"
 )
 
-const botTestChannel = "C028HTSA42K"
-const dinnerRotationChannel = "CTEKWPTD1"
-
-type SlackConfig struct {
+type slackConfig struct {
 	BotUserToken          string
 	BotTestChannel        string
 	DinnerRotationChannel string
 }
 
-func NewSlackConfig() (*SlackConfig, error) {
-	botUserToken, ok := os.LookupEnv("BOT_SIGNING_KEY")
-	if !ok {
-		log.Fatal("BOT_SIGNING_KEY is not set")
+func newSlackConfig() (*slackConfig, error) {
+	if !viper.IsSet("slack.botSigningKey") {
+		return nil, fmt.Errorf("Couldn't find the config's slack botSigningKey")
 	}
-
-	s := &SlackConfig{
-		BotUserToken:          strings.TrimSpace(botUserToken),
-		BotTestChannel:        botTestChannel,
-		DinnerRotationChannel: dinnerRotationChannel,
+	if !viper.IsSet("slack.dev.channelID") {
+		return nil, fmt.Errorf("Couldn't find the config's slack dev channelID")
 	}
-
-	return s, nil
+	if !viper.IsSet("slack.prod.channelID") {
+		return nil, fmt.Errorf("Couldn't find the config's slack prod channelID")
+	}
+	return &slackConfig{
+		BotUserToken:          viper.GetString("slack.botSigningKey"),
+		BotTestChannel:        viper.GetString("slack.dev.channelID"),
+		DinnerRotationChannel: viper.GetString("slack.prod.channelID"),
+	}, nil
 }
