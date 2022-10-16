@@ -3,15 +3,16 @@ package rest
 import (
 	"encoding/json"
 	"fmt"
-	"github.com/ddritzenhoff/dindin/internal/person"
-	"github.com/slack-go/slack/slackevents"
 	"io"
 	"log"
 	"net/http"
+
+	"github.com/ddritzenhoff/dindin/internal/member"
+	"github.com/slack-go/slack/slackevents"
 )
 
 type Handlers struct {
-	personService *person.Service
+	personService *member.Service
 }
 
 func (h *Handlers) routes() *http.ServeMux {

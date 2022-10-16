@@ -24,6 +24,6 @@ var cmdPing = &cobra.Command{
 		defer conn.Close()
 		slackClient := rpc.NewSlackActionsClient(conn)
 		msg, err := slackClient.Ping(context.Background(), &rpc.PingMessage{Message: "sent from the client"})
-		fmt.Printf("Got a response from the server: %s", msg.Message)
+		fmt.Printf("Got a response from the server: %s", msg.GetMessage())
 	},
 }

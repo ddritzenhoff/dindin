@@ -1,14 +1,15 @@
-package person
+package member
 
 import (
-	"github.com/ddritzenhoff/dindin/internal/cooking"
-	"github.com/slack-go/slack/slackevents"
-	"gorm.io/gorm"
 	"log"
 	"time"
+
+	"github.com/ddritzenhoff/dindin/internal/day"
+	"github.com/slack-go/slack/slackevents"
+	"gorm.io/gorm"
 )
 
-type Person struct {
+type Member struct {
 	ID          uint
 	CreatedAt   time.Time
 	UpdatedAt   time.Time
@@ -20,10 +21,10 @@ type Person struct {
 
 type Service struct {
 	store         store
-	eatingService *cooking.EventService
+	eatingService *day.EventService
 }
 
-func NewService(db *gorm.DB, eatingService *cooking.EventService) (*Service, error) {
+func NewService(db *gorm.DB, eatingService *day.EventService) (*Service, error) {
 	pStore, err := newStore(db)
 	if err != nil {
 		return nil, err
@@ -46,7 +47,7 @@ func (s *Service) LikedMessage(slackUID string) error {
 	return nil
 }
 
-func (s *Service) GetPerson(slackUID string) (p *Person, _exists bool) {
+func (s *Service) GetMember(slackUID string) (p *Member, _exists bool) {
 	p, err := s.store.get(slackUID)
 	if err != nil {
 		return nil, false
@@ -75,9 +76,9 @@ func (s *Service) ReactionAddedEvent(e *slackevents.ReactionAddedEvent) {
 
 	// add the user if he doesn't exist yet
 	slackUID := e.User
-	p, exists := s.GetPerson(slackUID)
+	p, exists := s.GetMember(slackUID)
 	if !exists {
-		p = &Person{SlackUID: slackUID}
+		p = &Member{SlackUID: slackUID}
 		err := s.store.create(p)
 		if err != nil {
 			return
@@ -112,9 +113,9 @@ func (s *Service) ReactionRemovedEvent(e *slackevents.ReactionRemovedEvent) {
 
 	// add the user if he doesn't exist yet
 	slackUID := e.User
-	p, exists := s.GetPerson(slackUID)
+	p, exists := s.GetMember(slackUID)
 	if !exists {
-		p = &Person{SlackUID: slackUID}
+		p = &Member{SlackUID: slackUID}
 		err := s.store.create(p)
 		if err != nil {
 			return
@@ -128,4 +129,12 @@ func (s *Service) ReactionRemovedEvent(e *slackevents.ReactionRemovedEvent) {
 	if err != nil {
 		return
 	}
+}
+
+func (s *Service) GetAllMembers() ([]Member, error) {
+	members, err := s.store.getAll()
+	if err != nil {
+		return nil, err
+	}
+	return members, nil
 }

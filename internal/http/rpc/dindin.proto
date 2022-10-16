@@ -1,6 +1,6 @@
 syntax = "proto3";
 option go_package = "github.com/ddritzenhoff/dindin/internal/http/pb";
-package pb;
+package rpc;
 
 message EatingTomorrowRequest {
   string SlackUID = 1;
@@ -12,7 +12,18 @@ message PingMessage {
   string message = 1;
 }
 
+message GetMembersRequest {}
+
+message GetMembersResponse {
+  string firstName = 1;
+  string lastName = 2;
+  string realName = 3;
+  string displayName = 4;
+  string slackUID = 5;
+}
+
 service SlackActions {
   rpc EatingTomorrow(EatingTomorrowRequest) returns (EatingTomorrowResponse) {}
   rpc Ping(PingMessage) returns (PingMessage) {}
+  rpc GetMembers(GetMembersRequest) returns (stream GetMembersResponse) {}
 }

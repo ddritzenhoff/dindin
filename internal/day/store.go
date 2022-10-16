@@ -1,4 +1,4 @@
-package cooking
+package day
 
 import (
 	"gorm.io/gorm"

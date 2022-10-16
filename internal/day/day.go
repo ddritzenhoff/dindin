@@ -1,12 +1,13 @@
-package cooking
+package day
 
 import (
+	"time"
+
 	"github.com/slack-go/slack"
 	"gorm.io/gorm"
-	"time"
 )
 
-const day = time.Hour * 24
+const DAY_LENGTH_SECONDS = time.Hour * 24
 
 type Event struct {
 	ID              uint
@@ -14,6 +15,7 @@ type Event struct {
 	UpdatedAt       time.Time
 	DeletedAt       gorm.DeletedAt `gorm:"index"`
 	CookingDay      int
+	CookingWeek     int
 	ChefSlackUID    string
 	MealDescription string
 	timeCreated     time.Time
@@ -21,7 +23,7 @@ type Event struct {
 }
 
 func (e *Event) IsEatingMessageExpired() bool {
-	return time.Since(e.timeCreated) > day
+	return time.Since(e.timeCreated) > DAY_LENGTH_SECONDS
 }
 
 // EventService struct holds all the dependencies required for the CookingEvent struct and exposes all services
