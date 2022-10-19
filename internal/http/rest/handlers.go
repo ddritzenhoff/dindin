@@ -22,6 +22,9 @@ func (h *Handlers) routes() *http.ServeMux {
 
 func (h *Handlers) handleSlackEvent(writer http.ResponseWriter, request *http.Request) {
 	body, err := io.ReadAll(request.Body)
+	if err != nil {
+		return
+	}
 	event, err := slackevents.ParseEvent(body, slackevents.OptionNoVerifyToken())
 	if err != nil {
 		log.Println("Unable to parse event.")
