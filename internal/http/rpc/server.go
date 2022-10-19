@@ -2,6 +2,7 @@ package rpc
 
 import (
 	"context"
+	"fmt"
 
 	"github.com/ddritzenhoff/dindin/internal/day"
 	"github.com/ddritzenhoff/dindin/internal/member"
@@ -29,15 +30,15 @@ func (s *Server) Ping(_ context.Context, in *PingMessage) (*PingMessage, error) 
 func (s *Server) EatingTomorrow(_ context.Context, in *EatingTomorrowRequest) (*EatingTomorrowResponse, error) {
 	err := s.eatingService.PostEatingTomorrow(in.SlackUID)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("PostEatingTomorrow: %w", err)
 	}
-	return nil, nil
+	return &EatingTomorrowResponse{}, nil
 }
 
 func (s *Server) GetMembers(_ *GetMembersRequest, stream SlackActions_GetMembersServer) error {
 	members, err := s.memberService.GetAllMembers()
 	if err != nil {
-		return err
+		return fmt.Errorf("GetAllMembers: %w", err)
 	}
 
 	var membersSlackUIDs []string
@@ -47,7 +48,7 @@ func (s *Server) GetMembers(_ *GetMembersRequest, stream SlackActions_GetMembers
 
 	slackMembers, err := s.slackClient.GetUsersInfo(membersSlackUIDs...)
 	if err != nil {
-		return err
+		return fmt.Errorf("GetUsersInfo: %w", err)
 	}
 
 	for _, slackMember := range *slackMembers {
@@ -61,4 +62,8 @@ func (s *Server) GetMembers(_ *GetMembersRequest, stream SlackActions_GetMembers
 	}
 
 	return nil
+}
+
+func (s *Server) WeeklyUpdate(_ context.Context, in *WeeklyUpdateRequest) (*WeeklyUpdateResponse, error) {
+	return &WeeklyUpdateResponse{}, s.memberService.WeeklyUpdate()
 }

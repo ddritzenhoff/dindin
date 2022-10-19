@@ -22,45 +22,45 @@ func newStore(db *gorm.DB) (*memberStore, error) {
 	return &memberStore{db: db}, nil
 }
 
-func (ps *memberStore) create(p *Member) error {
-	err := ps.db.Create(p).Error
+func (ms *memberStore) create(p *Member) error {
+	err := ms.db.Create(p).Error
 	if err != nil {
-		return fmt.Errorf("Failed creating member: %w", err)
+		return fmt.Errorf("create member: %w", err)
 	}
 	return nil
 }
 
-func (ps *memberStore) get(slackUID string) (*Member, error) {
+func (ms *memberStore) get(slackUID string) (*Member, error) {
 	var member Member
-	err := ps.db.First(&member, "id = ?", slackUID).Error
+	err := ms.db.First(&member, "id = ?", slackUID).Error
 	if err != nil {
-		return nil, fmt.Errorf("Member not found: %w", err)
+		return nil, fmt.Errorf("get member: %w", err)
 	}
 	return &member, nil
 }
 
-func (ps *memberStore) getAll() ([]Member, error) {
+func (ms *memberStore) getAll() ([]Member, error) {
 	var members []Member
-	err := ps.db.Find(&members).Error
+	err := ms.db.Find(&members).Error
 	if err != nil {
-		return nil, fmt.Errorf("Couldn't retrieve all of the members: %w", err)
+		return nil, fmt.Errorf("getAll members: %w", err)
 	}
 	return members, nil
 }
 
-func (ps *memberStore) update(p *Member) error {
-	err := ps.db.Model(&Member{}).Where("id = ?", p.SlackUID).Updates(p).Error
+func (ms *memberStore) update(p *Member) error {
+	err := ms.db.Model(&Member{}).Where("id = ?", p.SlackUID).Updates(p).Error
 	// pretty sure that ps.db.Model(p).Updates(p).Error also works here.
 	if err != nil {
-		return fmt.Errorf("Failed to update member: %w", err)
+		return fmt.Errorf("update member: %w", err)
 	}
 	return nil
 }
 
-func (ps *memberStore) delete(slackUID string) error {
-	err := ps.db.Delete(&Member{}, "id = ?", slackUID).Error
+func (ms *memberStore) delete(slackUID string) error {
+	err := ms.db.Delete(&Member{}, "id = ?", slackUID).Error
 	if err != nil {
-		return fmt.Errorf("Failed to member: %w", err)
+		return fmt.Errorf("delete member: %w", err)
 	}
 	return nil
 }

@@ -2,7 +2,6 @@ package rest
 
 import (
 	"encoding/json"
-	"fmt"
 	"io"
 	"log"
 	"net/http"
@@ -22,7 +21,6 @@ func (h *Handlers) routes() *http.ServeMux {
 }
 
 func (h *Handlers) handleSlackEvent(writer http.ResponseWriter, request *http.Request) {
-	fmt.Println("within ServerHTTP")
 	body, err := io.ReadAll(request.Body)
 	event, err := slackevents.ParseEvent(body, slackevents.OptionNoVerifyToken())
 	if err != nil {

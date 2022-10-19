@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "github.com/ddritzenhoff/dindin/internal/http/pb";
+option go_package = "github.com/ddritzenhoff/dindin/internal/http/rpc";
 package rpc;
 
 message EatingTomorrowRequest {
@@ -22,8 +22,12 @@ message GetMembersResponse {
   string slackUID = 5;
 }
 
+message WeeklyUpdateRequest {}
+message WeeklyUpdateResponse {}
+
 service SlackActions {
   rpc EatingTomorrow(EatingTomorrowRequest) returns (EatingTomorrowResponse) {}
   rpc Ping(PingMessage) returns (PingMessage) {}
   rpc GetMembers(GetMembersRequest) returns (stream GetMembersResponse) {}
+  rpc WeeklyUpdate(WeeklyUpdateRequest) returns (WeeklyUpdateResponse) {}
 }
