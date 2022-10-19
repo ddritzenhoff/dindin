@@ -1,8 +1,9 @@
 package day
 
 import (
+	"fmt"
+
 	"gorm.io/gorm"
-	"log"
 )
 
 type store interface {
@@ -23,37 +24,32 @@ func newStore(db *gorm.DB) (*eatingStore, error) {
 func (es *eatingStore) create(e *Event) error {
 	err := es.db.Create(e).Error
 	if err != nil {
-		log.Println("failed creating eating entry")
-		return err
+		return fmt.Errorf("create event: %w", err)
 	}
 	return nil
 }
 
 func (es *eatingStore) get(slackMessageID string) (*Event, error) {
 	var person Event
-	err := es.db.First(&person, "id = ?", slackMessageID).Error
+	err := es.db.First(&person, slackMessageID).Error
 	if err != nil {
-		log.Println("eating entry not found")
-		return nil, err
+		return nil, fmt.Errorf("get event: %w", err)
 	}
 	return &person, nil
 }
 
 func (es *eatingStore) update(e *Event) error {
-	err := es.db.Model(&Event{}).Where("id = ?", e.slackMessageID).Updates(e).Error
-	// pretty sure that ps.db.Model(p).Updates(p).Error also works here.
+	err := es.db.Model(&Event{}).Updates(e).Error
 	if err != nil {
-		log.Println("failed to update eating entry")
-		return err
+		return fmt.Errorf("update event: %w", err)
 	}
 	return nil
 }
 
 func (es *eatingStore) delete(slackMessageID string) error {
-	err := es.db.Delete(&Event{}, "id = ?", slackMessageID).Error
+	err := es.db.Model(&Event{}).Delete(slackMessageID).Error
 	if err != nil {
-		log.Println("failed to delete eating entry")
-		return err
+		return fmt.Errorf("delete event: %w", err)
 	}
 	return nil
 }
