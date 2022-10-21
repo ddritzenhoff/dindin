@@ -5,37 +5,38 @@ import (
 	"fmt"
 
 	"github.com/ddritzenhoff/dindin/internal/day"
+	"github.com/ddritzenhoff/dindin/internal/http/rpc/pb"
 	"github.com/ddritzenhoff/dindin/internal/member"
 	"github.com/slack-go/slack"
 )
 
 // Server represents the gRPC http
 type Server struct {
-	eatingService *day.EventService
+	eventService  *day.EventService
 	memberService *member.Service
 	slackClient   *slack.Client
-	UnimplementedSlackActionsServer
+	pb.UnimplementedSlackActionsServer
 }
 
 func NewServer(es *day.EventService, ms *member.Service, slackClient *slack.Client) Server {
-	return Server{eatingService: es, memberService: ms}
+	return Server{eventService: es, memberService: ms}
 }
 
 // Ping generates a response to indicate http is working
-func (s *Server) Ping(_ context.Context, in *PingMessage) (*PingMessage, error) {
-	return &PingMessage{Message: in.Message + " received"}, nil
+func (s *Server) Ping(_ context.Context, in *pb.PingMessage) (*pb.PingMessage, error) {
+	return &pb.PingMessage{Message: in.Message + " received"}, nil
 }
 
 // EatingTomorrow generates triggers a message in the dinner-rotation Slack channel
-func (s *Server) EatingTomorrow(_ context.Context, in *EatingTomorrowRequest) (*EatingTomorrowResponse, error) {
-	err := s.eatingService.PostEatingTomorrow(in.SlackUID)
+func (s *Server) EatingTomorrow(_ context.Context, in *pb.EatingTomorrowRequest) (*pb.EatingTomorrowResponse, error) {
+	err := s.eventService.PostEatingTomorrow(in.SlackUID)
 	if err != nil {
 		return nil, fmt.Errorf("PostEatingTomorrow: %w", err)
 	}
-	return &EatingTomorrowResponse{}, nil
+	return &pb.EatingTomorrowResponse{}, nil
 }
 
-func (s *Server) GetMembers(_ *GetMembersRequest, stream SlackActions_GetMembersServer) error {
+func (s *Server) GetMembers(_ *pb.GetMembersRequest, stream pb.SlackActions_GetMembersServer) error {
 	members, err := s.memberService.GetAllMembers()
 	if err != nil {
 		return fmt.Errorf("GetAllMembers: %w", err)
@@ -52,7 +53,7 @@ func (s *Server) GetMembers(_ *GetMembersRequest, stream SlackActions_GetMembers
 	}
 
 	for _, slackMember := range *slackMembers {
-		stream.Send(&GetMembersResponse{
+		stream.Send(&pb.GetMembersResponse{
 			FirstName:   slackMember.Profile.FirstName,
 			LastName:    slackMember.Profile.LastName,
 			RealName:    slackMember.Profile.RealNameNormalized,
@@ -64,6 +65,10 @@ func (s *Server) GetMembers(_ *GetMembersRequest, stream SlackActions_GetMembers
 	return nil
 }
 
-func (s *Server) WeeklyUpdate(_ context.Context, in *WeeklyUpdateRequest) (*WeeklyUpdateResponse, error) {
-	return &WeeklyUpdateResponse{}, s.memberService.WeeklyUpdate()
+func (s *Server) WeeklyUpdate(_ context.Context, in *pb.WeeklyUpdateRequest) (*pb.WeeklyUpdateResponse, error) {
+	return &pb.WeeklyUpdateResponse{}, s.memberService.WeeklyUpdate()
+}
+
+func (s *Server) AssignCooks(_ context.Context, acr *pb.AssignCooksRequest) (*pb.AssignCooksResponse, error) {
+	return &pb.AssignCooksResponse{}, s.eventService.AssignCooks(acr.GetCookingDays())
 }
