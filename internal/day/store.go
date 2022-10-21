@@ -9,6 +9,7 @@ import (
 type store interface {
 	create(p *Event) error
 	get(slackMessageID string) (*Event, error)
+	getByDateOrCreate(year int, month int, day int) (*Event, error)
 	delete(slackMessageID string) error
 	update(p *Event) error
 }
@@ -30,12 +31,21 @@ func (es *eatingStore) create(e *Event) error {
 }
 
 func (es *eatingStore) get(slackMessageID string) (*Event, error) {
-	var person Event
-	err := es.db.First(&person, slackMessageID).Error
+	var event Event
+	err := es.db.Find(&event).Where("slack_message_id = ?", slackMessageID).Error
 	if err != nil {
 		return nil, fmt.Errorf("get event: %w", err)
 	}
-	return &person, nil
+	return &event, nil
+}
+
+func (es *eatingStore) getByDateOrCreate(year int, month int, day int) (*Event, error) {
+	var event Event
+	err := es.db.FirstOrCreate(&event, "cooking_year = ?", year, "cooking_month = ?", month, "cooking_day = ?", day).Error
+	if err != nil {
+		return nil, fmt.Errorf("getByDate event: %w", err)
+	}
+	return &event, nil
 }
 
 func (es *eatingStore) update(e *Event) error {
@@ -47,7 +57,7 @@ func (es *eatingStore) update(e *Event) error {
 }
 
 func (es *eatingStore) delete(slackMessageID string) error {
-	err := es.db.Model(&Event{}).Delete(slackMessageID).Error
+	err := es.db.Delete(&Event{}, "slack_message_id = ?", slackMessageID).Error
 	if err != nil {
 		return fmt.Errorf("delete event: %w", err)
 	}

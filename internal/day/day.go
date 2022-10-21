@@ -1,8 +1,10 @@
 package day
 
 import (
+	"fmt"
 	"time"
 
+	"github.com/ddritzenhoff/dindin/internal/http/rpc/pb"
 	"github.com/slack-go/slack"
 	"gorm.io/gorm"
 )
@@ -15,11 +17,12 @@ type Event struct {
 	UpdatedAt       time.Time
 	DeletedAt       gorm.DeletedAt `gorm:"index"`
 	CookingDay      int
-	CookingWeek     int
+	CookingMonth    int
+	CookingYear     int
 	ChefSlackUID    string
 	MealDescription string
 	timeCreated     time.Time
-	slackMessageID  string `gorm:"primaryKey"`
+	slackMessageID  string
 }
 
 func (e *Event) IsEatingMessageExpired() bool {
@@ -42,12 +45,22 @@ func NewEventService(db *gorm.DB, slackChannel string, slackClient *slack.Client
 	return &EventService{store: pStore, slackChannel: slackChannel, slackClient: slackClient}, nil
 }
 
-func (s *EventService) GetEatingEvent(slackMessageID string) (_eatingEvent *Event, _exists bool) {
+func (s *EventService) GetEatingEvent(slackMessageID string) (eatingEvent *Event, exists bool) {
 	event, err := s.store.get(slackMessageID)
 	if err != nil {
 		return nil, false
 	}
 	return event, true
+}
+
+func isEatingTomorrowBlock() slack.MsgOption {
+	// Header Section
+	headerText := slack.NewTextBlockObject("mrkdwn", "hey <!channel>, please react to this message (:thumbsup:) if you are eating tomorrow", false, false)
+	headerSection := slack.NewSectionBlock(headerText, nil, nil)
+
+	return slack.MsgOptionBlocks(
+		headerSection,
+	)
 }
 
 func (s *EventService) PostEatingTomorrow(slackUID string) error {
@@ -72,12 +85,14 @@ func (s *EventService) PostEatingTomorrow(slackUID string) error {
 	return nil
 }
 
-func isEatingTomorrowBlock() slack.MsgOption {
-	// Header Section
-	headerText := slack.NewTextBlockObject("mrkdwn", "hey <!channel>, please react to this message (:thumbsup:) if you are eating tomorrow", false, false)
-	headerSection := slack.NewSectionBlock(headerText, nil, nil)
-
-	return slack.MsgOptionBlocks(
-		headerSection,
-	)
+func (s *EventService) AssignCooks(cookingDays []*pb.CookingDay) error {
+	for ii, cookingDay := range cookingDays {
+		event, err := s.store.getByDateOrCreate(int(cookingDay.Year), int(cookingDay.Month), int(cookingDay.Day))
+		if err != nil {
+			return fmt.Errorf("getByDate %d: %w", ii, err)
+		}
+		event.ChefSlackUID = cookingDay.SlackUID
+		s.store.update(event)
+	}
+	return nil
 }
