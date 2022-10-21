@@ -9,6 +9,7 @@ import (
 	"github.com/ddritzenhoff/dindin/internal/day"
 	"github.com/ddritzenhoff/dindin/internal/http/rest"
 	"github.com/ddritzenhoff/dindin/internal/http/rpc"
+	"github.com/ddritzenhoff/dindin/internal/http/rpc/pb"
 	"github.com/ddritzenhoff/dindin/internal/member"
 	"github.com/slack-go/slack"
 	"google.golang.org/grpc"
@@ -73,7 +74,7 @@ func main() {
 	// create a gRPC http object
 	grpcServer := grpc.NewServer()
 	// attach the Ping service to the http
-	rpc.RegisterSlackActionsServer(grpcServer, &s)
+	pb.RegisterSlackActionsServer(grpcServer, &s)
 	// start the http
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %s", err)

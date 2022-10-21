@@ -5,7 +5,7 @@ import (
 	"io"
 	"log"
 
-	"github.com/ddritzenhoff/dindin/internal/http/rpc"
+	"github.com/ddritzenhoff/dindin/internal/http/rpc/pb"
 	"github.com/spf13/cobra"
 )
 
@@ -16,14 +16,15 @@ func init() {
 var cmdMembers = &cobra.Command{
 	Use:   "members",
 	Short: "get the members of dinner rotation in [first name, last name | realName | displayName | SlackUID] order",
+	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		conn, err := generateGRPCClientConnection()
 		if err != nil {
 			log.Fatal(err)
 		}
 		defer conn.Close()
-		slackClient := rpc.NewSlackActionsClient(conn)
-		stream, err := slackClient.GetMembers(context.Background(), &rpc.GetMembersRequest{})
+		slackClient := pb.NewSlackActionsClient(conn)
+		stream, err := slackClient.GetMembers(context.Background(), &pb.GetMembersRequest{})
 		if err != nil {
 			log.Fatalf("client.GetMembers failed: %v", err)
 		}
