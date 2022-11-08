@@ -17,11 +17,16 @@ type Handlers struct {
 func (h *Handlers) routes() *http.ServeMux {
 	mux := http.NewServeMux()
 	mux.HandleFunc("/event", h.handleSlackEvent)
+	mux.HandleFunc("/ping", h.handlePing)
 	return mux
 }
 
-func (h *Handlers) handleSlackEvent(writer http.ResponseWriter, request *http.Request) {
-	body, err := io.ReadAll(request.Body)
+func (h *Handlers) handlePing(w http.ResponseWriter, r *http.Request) {
+	w.Write([]byte("pong"))
+}
+
+func (h *Handlers) handleSlackEvent(w http.ResponseWriter, r *http.Request) {
+	body, err := io.ReadAll(r.Body)
 	if err != nil {
 		return
 	}
@@ -35,10 +40,10 @@ func (h *Handlers) handleSlackEvent(writer http.ResponseWriter, request *http.Re
 		var r *slackevents.ChallengeResponse
 		err := json.Unmarshal(body, &r)
 		if err != nil {
-			http.Error(writer, err.Error(), http.StatusInternalServerError)
+			http.Error(w, err.Error(), http.StatusInternalServerError)
 			return
 		}
-		_, err = writer.Write([]byte(r.Challenge))
+		_, err = w.Write([]byte(r.Challenge))
 		if err != nil {
 			log.Println("Unable to write response")
 			return
