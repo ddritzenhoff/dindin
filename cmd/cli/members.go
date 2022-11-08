@@ -24,7 +24,7 @@ var cmdMembers = &cobra.Command{
 		}
 		defer conn.Close()
 		slackClient := pb.NewSlackActionsClient(conn)
-		stream, err := slackClient.GetMembers(context.Background(), &pb.GetMembersRequest{})
+		stream, err := slackClient.GetMembers(context.Background(), &pb.EmptyMessage{})
 		if err != nil {
 			log.Fatalf("client.GetMembers failed: %v", err)
 		}

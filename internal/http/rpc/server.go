@@ -23,20 +23,20 @@ func NewServer(es *day.EventService, ms *member.Service, slackClient *slack.Clie
 }
 
 // Ping generates a response to indicate http is working
-func (s *Server) Ping(_ context.Context, in *pb.PingMessage) (*pb.PingMessage, error) {
-	return &pb.PingMessage{Message: in.Message + " received"}, nil
+func (s *Server) Ping(_ context.Context, in *pb.EmptyMessage) (*pb.PingResponse, error) {
+	return &pb.PingResponse{Message: "pong"}, nil
 }
 
 // EatingTomorrow generates triggers a message in the dinner-rotation Slack channel
-func (s *Server) EatingTomorrow(_ context.Context, in *pb.EatingTomorrowRequest) (*pb.EatingTomorrowResponse, error) {
-	err := s.eventService.PostEatingTomorrow(in.SlackUID)
+func (s *Server) EatingTomorrow(_ context.Context, in *pb.EmptyMessage) (*pb.EmptyMessage, error) {
+	err := s.eventService.PostEatingTomorrow()
 	if err != nil {
 		return nil, fmt.Errorf("PostEatingTomorrow: %w", err)
 	}
-	return &pb.EatingTomorrowResponse{}, nil
+	return &pb.EmptyMessage{}, nil
 }
 
-func (s *Server) GetMembers(_ *pb.GetMembersRequest, stream pb.SlackActions_GetMembersServer) error {
+func (s *Server) GetMembers(_ *pb.EmptyMessage, stream pb.SlackActions_GetMembersServer) error {
 	members, err := s.memberService.GetAllMembers()
 	if err != nil {
 		return fmt.Errorf("GetAllMembers: %w", err)
@@ -65,10 +65,10 @@ func (s *Server) GetMembers(_ *pb.GetMembersRequest, stream pb.SlackActions_GetM
 	return nil
 }
 
-func (s *Server) WeeklyUpdate(_ context.Context, in *pb.WeeklyUpdateRequest) (*pb.WeeklyUpdateResponse, error) {
-	return &pb.WeeklyUpdateResponse{}, s.memberService.WeeklyUpdate()
+func (s *Server) WeeklyUpdate(_ context.Context, in *pb.EmptyMessage) (*pb.EmptyMessage, error) {
+	return &pb.EmptyMessage{}, s.memberService.WeeklyUpdate()
 }
 
-func (s *Server) AssignCooks(_ context.Context, acr *pb.AssignCooksRequest) (*pb.AssignCooksResponse, error) {
-	return &pb.AssignCooksResponse{}, s.eventService.AssignCooks(acr.GetCookingDays())
+func (s *Server) AssignCooks(_ context.Context, acr *pb.AssignCooksRequest) (*pb.EmptyMessage, error) {
+	return &pb.EmptyMessage{}, s.eventService.AssignCooks(acr.GetCookingDays())
 }
