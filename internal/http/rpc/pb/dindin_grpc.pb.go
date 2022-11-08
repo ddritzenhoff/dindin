@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v3.21.7
-// source: internal/http/rpc/pb/dindin.proto
+// source: pb/dindin.proto
 
 package pb
 
@@ -22,11 +22,11 @@ const _ = grpc.SupportPackageIsVersion7
 //
 // For semantics around ctx use and closing/ending streaming RPCs, please refer to https://pkg.go.dev/google.golang.org/grpc/?tab=doc#ClientConn.NewStream.
 type SlackActionsClient interface {
-	EatingTomorrow(ctx context.Context, in *EatingTomorrowRequest, opts ...grpc.CallOption) (*EatingTomorrowResponse, error)
-	Ping(ctx context.Context, in *PingMessage, opts ...grpc.CallOption) (*PingMessage, error)
-	GetMembers(ctx context.Context, in *GetMembersRequest, opts ...grpc.CallOption) (SlackActions_GetMembersClient, error)
-	WeeklyUpdate(ctx context.Context, in *WeeklyUpdateRequest, opts ...grpc.CallOption) (*WeeklyUpdateResponse, error)
-	AssignCooks(ctx context.Context, in *AssignCooksRequest, opts ...grpc.CallOption) (*AssignCooksResponse, error)
+	EatingTomorrow(ctx context.Context, in *EmptyMessage, opts ...grpc.CallOption) (*EmptyMessage, error)
+	Ping(ctx context.Context, in *EmptyMessage, opts ...grpc.CallOption) (*PingResponse, error)
+	GetMembers(ctx context.Context, in *EmptyMessage, opts ...grpc.CallOption) (SlackActions_GetMembersClient, error)
+	WeeklyUpdate(ctx context.Context, in *EmptyMessage, opts ...grpc.CallOption) (*EmptyMessage, error)
+	AssignCooks(ctx context.Context, in *AssignCooksRequest, opts ...grpc.CallOption) (*EmptyMessage, error)
 }
 
 type slackActionsClient struct {
@@ -37,8 +37,8 @@ func NewSlackActionsClient(cc grpc.ClientConnInterface) SlackActionsClient {
 	return &slackActionsClient{cc}
 }
 
-func (c *slackActionsClient) EatingTomorrow(ctx context.Context, in *EatingTomorrowRequest, opts ...grpc.CallOption) (*EatingTomorrowResponse, error) {
-	out := new(EatingTomorrowResponse)
+func (c *slackActionsClient) EatingTomorrow(ctx context.Context, in *EmptyMessage, opts ...grpc.CallOption) (*EmptyMessage, error) {
+	out := new(EmptyMessage)
 	err := c.cc.Invoke(ctx, "/pb.SlackActions/EatingTomorrow", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -46,8 +46,8 @@ func (c *slackActionsClient) EatingTomorrow(ctx context.Context, in *EatingTomor
 	return out, nil
 }
 
-func (c *slackActionsClient) Ping(ctx context.Context, in *PingMessage, opts ...grpc.CallOption) (*PingMessage, error) {
-	out := new(PingMessage)
+func (c *slackActionsClient) Ping(ctx context.Context, in *EmptyMessage, opts ...grpc.CallOption) (*PingResponse, error) {
+	out := new(PingResponse)
 	err := c.cc.Invoke(ctx, "/pb.SlackActions/Ping", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -55,7 +55,7 @@ func (c *slackActionsClient) Ping(ctx context.Context, in *PingMessage, opts ...
 	return out, nil
 }
 
-func (c *slackActionsClient) GetMembers(ctx context.Context, in *GetMembersRequest, opts ...grpc.CallOption) (SlackActions_GetMembersClient, error) {
+func (c *slackActionsClient) GetMembers(ctx context.Context, in *EmptyMessage, opts ...grpc.CallOption) (SlackActions_GetMembersClient, error) {
 	stream, err := c.cc.NewStream(ctx, &SlackActions_ServiceDesc.Streams[0], "/pb.SlackActions/GetMembers", opts...)
 	if err != nil {
 		return nil, err
@@ -87,8 +87,8 @@ func (x *slackActionsGetMembersClient) Recv() (*GetMembersResponse, error) {
 	return m, nil
 }
 
-func (c *slackActionsClient) WeeklyUpdate(ctx context.Context, in *WeeklyUpdateRequest, opts ...grpc.CallOption) (*WeeklyUpdateResponse, error) {
-	out := new(WeeklyUpdateResponse)
+func (c *slackActionsClient) WeeklyUpdate(ctx context.Context, in *EmptyMessage, opts ...grpc.CallOption) (*EmptyMessage, error) {
+	out := new(EmptyMessage)
 	err := c.cc.Invoke(ctx, "/pb.SlackActions/WeeklyUpdate", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -96,8 +96,8 @@ func (c *slackActionsClient) WeeklyUpdate(ctx context.Context, in *WeeklyUpdateR
 	return out, nil
 }
 
-func (c *slackActionsClient) AssignCooks(ctx context.Context, in *AssignCooksRequest, opts ...grpc.CallOption) (*AssignCooksResponse, error) {
-	out := new(AssignCooksResponse)
+func (c *slackActionsClient) AssignCooks(ctx context.Context, in *AssignCooksRequest, opts ...grpc.CallOption) (*EmptyMessage, error) {
+	out := new(EmptyMessage)
 	err := c.cc.Invoke(ctx, "/pb.SlackActions/AssignCooks", in, out, opts...)
 	if err != nil {
 		return nil, err
@@ -109,11 +109,11 @@ func (c *slackActionsClient) AssignCooks(ctx context.Context, in *AssignCooksReq
 // All implementations must embed UnimplementedSlackActionsServer
 // for forward compatibility
 type SlackActionsServer interface {
-	EatingTomorrow(context.Context, *EatingTomorrowRequest) (*EatingTomorrowResponse, error)
-	Ping(context.Context, *PingMessage) (*PingMessage, error)
-	GetMembers(*GetMembersRequest, SlackActions_GetMembersServer) error
-	WeeklyUpdate(context.Context, *WeeklyUpdateRequest) (*WeeklyUpdateResponse, error)
-	AssignCooks(context.Context, *AssignCooksRequest) (*AssignCooksResponse, error)
+	EatingTomorrow(context.Context, *EmptyMessage) (*EmptyMessage, error)
+	Ping(context.Context, *EmptyMessage) (*PingResponse, error)
+	GetMembers(*EmptyMessage, SlackActions_GetMembersServer) error
+	WeeklyUpdate(context.Context, *EmptyMessage) (*EmptyMessage, error)
+	AssignCooks(context.Context, *AssignCooksRequest) (*EmptyMessage, error)
 	mustEmbedUnimplementedSlackActionsServer()
 }
 
@@ -121,19 +121,19 @@ type SlackActionsServer interface {
 type UnimplementedSlackActionsServer struct {
 }
 
-func (UnimplementedSlackActionsServer) EatingTomorrow(context.Context, *EatingTomorrowRequest) (*EatingTomorrowResponse, error) {
+func (UnimplementedSlackActionsServer) EatingTomorrow(context.Context, *EmptyMessage) (*EmptyMessage, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method EatingTomorrow not implemented")
 }
-func (UnimplementedSlackActionsServer) Ping(context.Context, *PingMessage) (*PingMessage, error) {
+func (UnimplementedSlackActionsServer) Ping(context.Context, *EmptyMessage) (*PingResponse, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method Ping not implemented")
 }
-func (UnimplementedSlackActionsServer) GetMembers(*GetMembersRequest, SlackActions_GetMembersServer) error {
+func (UnimplementedSlackActionsServer) GetMembers(*EmptyMessage, SlackActions_GetMembersServer) error {
 	return status.Errorf(codes.Unimplemented, "method GetMembers not implemented")
 }
-func (UnimplementedSlackActionsServer) WeeklyUpdate(context.Context, *WeeklyUpdateRequest) (*WeeklyUpdateResponse, error) {
+func (UnimplementedSlackActionsServer) WeeklyUpdate(context.Context, *EmptyMessage) (*EmptyMessage, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method WeeklyUpdate not implemented")
 }
-func (UnimplementedSlackActionsServer) AssignCooks(context.Context, *AssignCooksRequest) (*AssignCooksResponse, error) {
+func (UnimplementedSlackActionsServer) AssignCooks(context.Context, *AssignCooksRequest) (*EmptyMessage, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AssignCooks not implemented")
 }
 func (UnimplementedSlackActionsServer) mustEmbedUnimplementedSlackActionsServer() {}
@@ -150,7 +150,7 @@ func RegisterSlackActionsServer(s grpc.ServiceRegistrar, srv SlackActionsServer)
 }
 
 func _SlackActions_EatingTomorrow_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(EatingTomorrowRequest)
+	in := new(EmptyMessage)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -162,13 +162,13 @@ func _SlackActions_EatingTomorrow_Handler(srv interface{}, ctx context.Context, 
 		FullMethod: "/pb.SlackActions/EatingTomorrow",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SlackActionsServer).EatingTomorrow(ctx, req.(*EatingTomorrowRequest))
+		return srv.(SlackActionsServer).EatingTomorrow(ctx, req.(*EmptyMessage))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _SlackActions_Ping_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(PingMessage)
+	in := new(EmptyMessage)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -180,13 +180,13 @@ func _SlackActions_Ping_Handler(srv interface{}, ctx context.Context, dec func(i
 		FullMethod: "/pb.SlackActions/Ping",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SlackActionsServer).Ping(ctx, req.(*PingMessage))
+		return srv.(SlackActionsServer).Ping(ctx, req.(*EmptyMessage))
 	}
 	return interceptor(ctx, in, info, handler)
 }
 
 func _SlackActions_GetMembers_Handler(srv interface{}, stream grpc.ServerStream) error {
-	m := new(GetMembersRequest)
+	m := new(EmptyMessage)
 	if err := stream.RecvMsg(m); err != nil {
 		return err
 	}
@@ -207,7 +207,7 @@ func (x *slackActionsGetMembersServer) Send(m *GetMembersResponse) error {
 }
 
 func _SlackActions_WeeklyUpdate_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
-	in := new(WeeklyUpdateRequest)
+	in := new(EmptyMessage)
 	if err := dec(in); err != nil {
 		return nil, err
 	}
@@ -219,7 +219,7 @@ func _SlackActions_WeeklyUpdate_Handler(srv interface{}, ctx context.Context, de
 		FullMethod: "/pb.SlackActions/WeeklyUpdate",
 	}
 	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
-		return srv.(SlackActionsServer).WeeklyUpdate(ctx, req.(*WeeklyUpdateRequest))
+		return srv.(SlackActionsServer).WeeklyUpdate(ctx, req.(*EmptyMessage))
 	}
 	return interceptor(ctx, in, info, handler)
 }
@@ -273,5 +273,5 @@ var SlackActions_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 	},
-	Metadata: "internal/http/rpc/pb/dindin.proto",
+	Metadata: "pb/dindin.proto",
 }

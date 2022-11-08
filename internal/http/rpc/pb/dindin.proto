@@ -2,17 +2,9 @@ syntax = "proto3";
 option go_package = "github.com/ddritzenhoff/dindin/internal/http/rpc/pb";
 package pb;
 
-message EatingTomorrowRequest {
-  string SlackUID = 1;
-}
-
-message EatingTomorrowResponse {}
-
-message PingMessage {
+message PingResponse {
   string message = 1;
 }
-
-message GetMembersRequest {}
 
 message GetMembersResponse {
   string firstName = 1;
@@ -21,9 +13,6 @@ message GetMembersResponse {
   string displayName = 4;
   string slackUID = 5;
 }
-
-message WeeklyUpdateRequest {}
-message WeeklyUpdateResponse {}
 
 message CookingDay {
   int32 day = 1;
@@ -36,12 +25,12 @@ message AssignCooksRequest {
   repeated CookingDay CookingDays = 1;
 }
 
-message AssignCooksResponse {}
+message EmptyMessage {}
 
 service SlackActions {
-  rpc EatingTomorrow(EatingTomorrowRequest) returns (EatingTomorrowResponse) {}
-  rpc Ping(PingMessage) returns (PingMessage) {}
-  rpc GetMembers(GetMembersRequest) returns (stream GetMembersResponse) {}
-  rpc WeeklyUpdate(WeeklyUpdateRequest) returns (WeeklyUpdateResponse) {}
-  rpc AssignCooks(AssignCooksRequest) returns (AssignCooksResponse) {}
+  rpc EatingTomorrow(EmptyMessage) returns (EmptyMessage) {}
+  rpc Ping(EmptyMessage) returns (PingResponse) {}
+  rpc GetMembers(EmptyMessage) returns (stream GetMembersResponse) {}
+  rpc WeeklyUpdate(EmptyMessage) returns (EmptyMessage) {}
+  rpc AssignCooks(AssignCooksRequest) returns (EmptyMessage) {}
 }
