@@ -14,12 +14,12 @@ func (cfg *Configs) DBName() (string, error) {
 	if viper.IsSet("database.name") {
 		return viper.GetString("database.name"), nil
 	}
-	return "", fmt.Errorf("Couldn't find the config's database name attribute")
+	return "", fmt.Errorf("couldn't find the config's database name attribute")
 }
 
 func (cfg *Configs) REST() (*rest.Config, error) {
 	if !viper.IsSet("http.rest.port") {
-		return nil, fmt.Errorf("Couldn't find the config's rest port attribute")
+		return nil, fmt.Errorf("couldn't find the config's rest port attribute")
 	}
 	return &rest.Config{
 		Host: viper.GetString("http.rest.host"),
@@ -29,10 +29,10 @@ func (cfg *Configs) REST() (*rest.Config, error) {
 
 func (cfg *Configs) GRPC() (*rest.Config, error) {
 	if !viper.IsSet("http.grpc.host") {
-		return nil, fmt.Errorf("Couldn't find the config's grpc host attribute")
+		return nil, fmt.Errorf("couldn't find the config's grpc host attribute")
 	}
 	if !viper.IsSet("http.grpc.port") {
-		return nil, fmt.Errorf("Couldn't find the config's grpc port attribute")
+		return nil, fmt.Errorf("couldn't find the config's grpc port attribute")
 	}
 	return &rest.Config{
 		Host: viper.GetString("http.grpc.host"),
@@ -51,6 +51,8 @@ func NewConfigService() (*Configs, error) {
 	// 	you can pass it in instead?
 	viper.AddConfigPath(".")
 	viper.AddConfigPath("$HOME/programming/dindin/internal/configs/.")
+	viper.AddConfigPath("$HOME/config/.")
+	viper.AddConfigPath("$HOME/.")
 	err := viper.ReadInConfig()
 	if err != nil {
 		panic(fmt.Errorf("fatal error config file: %w", err))

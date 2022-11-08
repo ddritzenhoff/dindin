@@ -76,6 +76,7 @@ func main() {
 	// attach the Ping service to the http
 	pb.RegisterSlackActionsServer(grpcServer, &s)
 	// start the http
+	log.Printf("gRPC server listening on host %s and port %s\n", grpcCfg.Host, grpcCfg.Port)
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %s", err)
 	}

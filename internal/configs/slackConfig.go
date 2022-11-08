@@ -14,13 +14,13 @@ type slackConfig struct {
 
 func newSlackConfig() (*slackConfig, error) {
 	if !viper.IsSet("slack.botSigningKey") {
-		return nil, fmt.Errorf("Couldn't find the config's slack botSigningKey")
+		return nil, fmt.Errorf("couldn't find the config's slack botSigningKey")
 	}
 	if !viper.IsSet("slack.dev.channelID") {
-		return nil, fmt.Errorf("Couldn't find the config's slack dev channelID")
+		return nil, fmt.Errorf("couldn't find the config's slack dev channelID")
 	}
 	if !viper.IsSet("slack.prod.channelID") {
-		return nil, fmt.Errorf("Couldn't find the config's slack prod channelID")
+		return nil, fmt.Errorf("couldn't find the config's slack prod channelID")
 	}
 	return &slackConfig{
 		BotUserToken:          viper.GetString("slack.botSigningKey"),
