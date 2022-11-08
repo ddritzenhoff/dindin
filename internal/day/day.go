@@ -63,25 +63,24 @@ func isEatingTomorrowBlock() slack.MsgOption {
 	)
 }
 
-func (s *EventService) PostEatingTomorrow(slackUID string) error {
+func (s *EventService) PostEatingTomorrow() error {
+	year, month, day := time.Now().AddDate(0, 0, 1).Date()
+	e, err := s.store.getByDate(year, int(month), day)
+	if err != nil {
+		return err
+	}
+	if e.slackMessageID != "" {
+		return fmt.Errorf("the slack message has already been posted for tomorrow")
+	}
 	_, respTimestamp, err := s.slackClient.PostMessage(s.slackChannel, isEatingTomorrowBlock())
 	if err != nil {
 		return err
 	}
-	now := time.Now()
-	e := Event{
-		CookingDay:      int(now.Weekday()),
-		ChefSlackUID:    slackUID,
-		MealDescription: "",
-		timeCreated:     now,
-		slackMessageID:  respTimestamp,
-	}
-
-	err = s.store.create(&e)
+	e.slackMessageID = respTimestamp
+	err = s.store.update(e)
 	if err != nil {
 		return err
 	}
-
 	return nil
 }
 

@@ -10,6 +10,7 @@ type store interface {
 	create(p *Event) error
 	get(slackMessageID string) (*Event, error)
 	getByDateOrCreate(year int, month int, day int) (*Event, error)
+	getByDate(year int, month int, day int) (*Event, error)
 	delete(slackMessageID string) error
 	update(p *Event) error
 }
@@ -42,6 +43,15 @@ func (es *eatingStore) get(slackMessageID string) (*Event, error) {
 func (es *eatingStore) getByDateOrCreate(year int, month int, day int) (*Event, error) {
 	var event Event
 	err := es.db.FirstOrCreate(&event, "cooking_year = ?", year, "cooking_month = ?", month, "cooking_day = ?", day).Error
+	if err != nil {
+		return nil, fmt.Errorf("getByDateOrCreate event: %w", err)
+	}
+	return &event, nil
+}
+
+func (es *eatingStore) getByDate(year int, month int, day int) (*Event, error) {
+	var event Event
+	err := es.db.First(&event, "cooking_year = ?", year, "cooking_month = ?", month, "cooking_day = ?", day).Error
 	if err != nil {
 		return nil, fmt.Errorf("getByDate event: %w", err)
 	}
