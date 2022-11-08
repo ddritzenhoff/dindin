@@ -5,7 +5,7 @@ import (
 	"time"
 )
 
-func Test_getDayDifference(t *testing.T) {
+func TestGetDayDifference(t *testing.T) {
 	type args struct {
 		now  time.Weekday
 		then time.Weekday

@@ -2,6 +2,7 @@ package main
 
 import (
 	"context"
+	"fmt"
 	"log"
 	"time"
 
@@ -19,15 +20,17 @@ var sundaySlackUID string
 
 func init() {
 	rootCmd.AddCommand(assignCooks)
-	assignCooks.Flags().StringVarP(&mondaySlackUID, "monday", "m", "", "set cook for monday <slackUID>")
-	assignCooks.Flags().StringVarP(&tuesdaySlackUID, "tuesday", "t", "", "set cook for tuesday <slackUID>")
-	assignCooks.Flags().StringVarP(&wednesdaySlackUID, "wednesday", "w", "", "set cook for wednesday <slackUID>")
-	assignCooks.Flags().StringVarP(&thursdaySlackUID, "thursday", "h", "", "set cook for thursday <slackUID>")
-	assignCooks.Flags().StringVarP(&fridaySlackUID, "friday", "f", "", "set cook for friday <slackUID>")
-	assignCooks.Flags().StringVarP(&saturdaySlackUID, "saturday", "s", "", "set cook for saturday <slackUID>")
-	assignCooks.Flags().StringVarP(&sundaySlackUID, "sunday", "u", "", "set cook for sunday <slackUID>")
+	assignCooks.Flags().StringVar(&mondaySlackUID, "monday", "", "set cook for monday <slackUID>")
+	assignCooks.Flags().StringVar(&tuesdaySlackUID, "tuesday", "", "set cook for tuesday <slackUID>")
+	assignCooks.Flags().StringVar(&wednesdaySlackUID, "wednesday", "", "set cook for wednesday <slackUID>")
+	assignCooks.Flags().StringVar(&thursdaySlackUID, "thursday", "", "set cook for thursday <slackUID>")
+	assignCooks.Flags().StringVar(&fridaySlackUID, "friday", "", "set cook for friday <slackUID>")
+	assignCooks.Flags().StringVar(&saturdaySlackUID, "saturday", "", "set cook for saturday <slackUID>")
+	assignCooks.Flags().StringVar(&sundaySlackUID, "sunday", "", "set cook for sunday <slackUID>")
 }
 
+// getDayDifference returns the number of days between now (today) and then (some other weekday).
+// This function will return some value between 0 and 6. 0 --> now=Monday, then=Monday 6 --> now=Wednesday, then=Tuesday
 func getDayDifference(now time.Weekday, then time.Weekday) int {
 	return (int(then) - int(now) + 7) % 7
 }
@@ -80,6 +83,7 @@ var assignCooks = &cobra.Command{
 		}
 
 		if len(cookingDays) == 0 {
+			fmt.Println("didn't specify any days, so nothing happened..")
 			return
 		}
 
