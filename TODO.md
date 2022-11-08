@@ -8,3 +8,4 @@
 *Functionality*
 - [x] Assign next week cooks
 - [ ] Get upcoming cooks
+- [ ] Test database methods
