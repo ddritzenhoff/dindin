@@ -12,21 +12,20 @@ import (
 const DAY_LENGTH_SECONDS = time.Hour * 24
 
 type Event struct {
-	ID              uint
-	CreatedAt       time.Time
-	UpdatedAt       time.Time
-	DeletedAt       gorm.DeletedAt `gorm:"index"`
+	gorm.Model
 	CookingDay      int
 	CookingMonth    int
 	CookingYear     int
 	ChefSlackUID    string
 	MealDescription string
-	timeCreated     time.Time
-	slackMessageID  string
+	SlackMessageID  string
 }
 
+// IsEatingMessageExpired returns true if it's day(s) after the meal should have been cooked
 func (e *Event) IsEatingMessageExpired() bool {
-	return time.Since(e.timeCreated) > DAY_LENGTH_SECONDS
+	// TODO (ddritzenohff) could probably make this more accurate.
+	year, month, day := time.Now().Date()
+	return e.CookingYear < year || time.Month(e.CookingMonth) < month || e.CookingDay < day
 }
 
 // EventService struct holds all the dependencies required for the CookingEvent struct and exposes all services
@@ -69,14 +68,14 @@ func (s *EventService) PostEatingTomorrow() error {
 	if err != nil {
 		return err
 	}
-	if e.slackMessageID != "" {
+	if e.SlackMessageID != "" {
 		return fmt.Errorf("the slack message has already been posted for tomorrow")
 	}
 	_, respTimestamp, err := s.slackClient.PostMessage(s.slackChannel, isEatingTomorrowBlock())
 	if err != nil {
 		return err
 	}
-	e.slackMessageID = respTimestamp
+	e.SlackMessageID = respTimestamp
 	err = s.store.update(e)
 	if err != nil {
 		return err
