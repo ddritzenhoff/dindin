@@ -20,6 +20,7 @@ type eatingStore struct {
 }
 
 func newStore(db *gorm.DB) (*eatingStore, error) {
+	db.AutoMigrate(&Event{})
 	return &eatingStore{db: db}, nil
 }
 

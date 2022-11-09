@@ -19,6 +19,7 @@ type memberStore struct {
 }
 
 func newStore(db *gorm.DB) (*memberStore, error) {
+	db.AutoMigrate(&Member{})
 	return &memberStore{db: db}, nil
 }
 
