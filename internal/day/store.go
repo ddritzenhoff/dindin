@@ -42,29 +42,39 @@ func (es *eatingStore) get(slackMessageID string) (*Event, error) {
 }
 
 func (es *eatingStore) getByDateOrCreate(year int, month int, day int) (*Event, error) {
-	var event Event
-	err := es.db.FirstOrCreate(&event, "cooking_year = ?", year, "cooking_month = ?", month, "cooking_day = ?", day).Error
+	e, err := es.getByDate(year, month, day)
 	if err != nil {
-		return nil, fmt.Errorf("getByDateOrCreate event: %w", err)
+		if err == gorm.ErrRecordNotFound {
+			e = &Event{
+				CookingYear:  year,
+				CookingMonth: month,
+				CookingDay:   day,
+			}
+			err = es.create(e)
+			if err != nil {
+				return nil, fmt.Errorf("getByDateOrCreate create: %w", err)
+			}
+			return e, nil
+		}
+		return nil, err
 	}
-	return &event, nil
+	return e, nil
 }
 
 func (es *eatingStore) getByDate(year int, month int, day int) (*Event, error) {
 	var event Event
 	err := es.db.First(&event, "cooking_year = ?", year, "cooking_month = ?", month, "cooking_day = ?", day).Error
 	if err != nil {
-		return nil, fmt.Errorf("getByDate event: %w", err)
+		// TODO (ddritzenhoff) add error wrapping here
+		return nil, err
 	}
 	return &event, nil
 }
 
+// update updates the event based on the primary key (ID uint)
 func (es *eatingStore) update(e *Event) error {
-	err := es.db.Model(&Event{}).Updates(e).Error
-	if err != nil {
-		return fmt.Errorf("update event: %w", err)
-	}
-	return nil
+	err := es.db.Model(e).Updates(e).Error
+	return err
 }
 
 func (es *eatingStore) delete(slackMessageID string) error {
