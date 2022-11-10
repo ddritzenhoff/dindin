@@ -1,11 +1,10 @@
 **TODO**
 
-*General*
+_General_
+
 - [ ] Add logging in handler functions
 - [ ] Write tests for db operations
-- [ ]Dockerize
-
-*Functionality*
+- [ ] Dockerize
 - [x] Assign next week cooks
 - [ ] Get upcoming cooks
-- [ ] Test database methods
+- [ ] Implement error wrapping
