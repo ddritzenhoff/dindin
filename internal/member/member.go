@@ -1,81 +1,85 @@
 package member
 
 import (
+	"database/sql"
+	"errors"
 	"fmt"
-	"log"
 	"math"
 	"sort"
-	"time"
 
-	"github.com/ddritzenhoff/dindin/internal/day"
+	"github.com/ddritzenhoff/dindin/internal/configs"
+	"github.com/ddritzenhoff/dindin/internal/cooking"
 	"github.com/slack-go/slack"
 	"github.com/slack-go/slack/slackevents"
-	"gorm.io/gorm"
 )
 
 type Member struct {
-	ID          uint
-	CreatedAt   time.Time
-	UpdatedAt   time.Time
-	DeletedAt   gorm.DeletedAt `gorm:"index"`
-	SlackUID    string         `gorm:"primaryKey"`
+	ID          int64
+	CreatedAt   int64
+	UpdatedAt   int64
+	SlackUID    string
 	FirstName   string
 	LastName    string
-	MealsEaten  uint
-	MealsCooked uint
+	MealsEaten  int64
+	MealsCooked int64
 }
 
 type Service struct {
-	store         store
-	eatingService *day.EventService
-	slackClient   *slack.Client
-	slackChannel  string
+	repository     repository
+	cookingService *cooking.Service
+	slackCfg       *configs.SlackConfig
 }
 
-func NewService(db *gorm.DB, eatingService *day.EventService) (*Service, error) {
-	pStore, err := newStore(db)
+func NewService(db *sql.DB, cs *cooking.Service) (*Service, error) {
+	r, err := newRepository(db)
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("NewService: %w", err)
 	}
 
-	return &Service{store: pStore, eatingService: eatingService}, nil
+	return &Service{repository: r, cookingService: cs}, nil
 }
 
 func (s *Service) LikedMessage(slackUID string) error {
-	person, err := s.store.get(slackUID)
+	person, err := s.repository.getBySlackUID(slackUID)
 	if err != nil {
 		return err
 	}
 	person.MealsEaten += 1
-	err = s.store.update(person)
+	_, err = s.repository.updateMealsEaten(person.ID, person.MealsEaten)
 	if err != nil {
-		log.Println("wasn't able to update meals eaten")
-		return err
+		return fmt.Errorf("LikedMessage: %w", err)
 	}
 	return nil
 }
 
-func (s *Service) GetMember(slackUID string) (*Member, error) {
-	m, err := s.store.get(slackUID)
+func (s *Service) GetMemberOrCreate(slackUID string) (*Member, error) {
+	m, err := s.repository.getBySlackUID(slackUID)
 	if err != nil {
-		return s.createMember(slackUID)
+		if errors.Is(err, sql.ErrNoRows) {
+			m, err := s.createMember(slackUID)
+			if err != nil {
+				return nil, fmt.Errorf("GetMember createMember: %w", err)
+			}
+			return m, nil
+		}
+		return nil, fmt.Errorf("GetMember: %w", err)
 	}
 	return m, nil
 }
 
 func (s *Service) createMember(slackUID string) (*Member, error) {
-	slackUser, err := s.slackClient.GetUserInfo(slackUID)
+	slackUser, err := s.slackCfg.Client.GetUserInfo(slackUID)
 	if err != nil {
-		return nil, fmt.Errorf("GetUserInfo: %w", err)
+		return nil, fmt.Errorf("createMember GetUserInfo: %w", err)
 	}
-	m := &Member{SlackUID: slackUID, FirstName: slackUser.Profile.FirstName, LastName: slackUser.Profile.LastName, MealsEaten: 0, MealsCooked: 0}
-	err = s.store.create(m)
+	m, err := s.repository.create(Member{SlackUID: slackUID, FirstName: slackUser.Profile.FirstName, LastName: slackUser.Profile.LastName, MealsEaten: 0, MealsCooked: 0})
 	if err != nil {
-		return nil, fmt.Errorf("db create: %w", err)
+		return nil, fmt.Errorf("createMember create: %w", err)
 	}
 	return m, nil
 }
 
+// TODO (ddritzenhoff) either add logging or figure out a way to display the error to the user
 // ReactionAddedEvent determines whether to add +1 to the meals eaten of this specific user
 func (s *Service) ReactionAddedEvent(e *slackevents.ReactionAddedEvent) {
 	// Don't bother if the reaction isn't a like
@@ -85,7 +89,7 @@ func (s *Service) ReactionAddedEvent(e *slackevents.ReactionAddedEvent) {
 
 	// check to see whether the reaction was on a cooking event message
 	eventMessageID := e.Item.Timestamp
-	eatingEvent, exists := s.eatingService.GetEatingEvent(eventMessageID)
+	eatingEvent, exists := s.cookingService.GetEatingEvent(eventMessageID)
 	if !exists {
 		return
 	}
@@ -97,13 +101,13 @@ func (s *Service) ReactionAddedEvent(e *slackevents.ReactionAddedEvent) {
 
 	// add the user if he doesn't exist yet
 	slackUID := e.User
-	m, err := s.GetMember(slackUID)
+	m, err := s.GetMemberOrCreate(slackUID)
 	if err != nil {
 		return
 	}
 
 	m.MealsEaten += 1
-	err = s.store.update(m)
+	_, err = s.repository.updateMealsEaten(m.ID, m.MealsEaten)
 	if err != nil {
 		return
 	}
@@ -118,7 +122,7 @@ func (s *Service) ReactionRemovedEvent(e *slackevents.ReactionRemovedEvent) {
 
 	// check to see whether the reaction was on a cooking event message
 	eventMessageID := e.Item.Timestamp
-	eatingEvent, exists := s.eatingService.GetEatingEvent(eventMessageID)
+	eatingEvent, exists := s.cookingService.GetEatingEvent(eventMessageID)
 	if !exists {
 		return
 	}
@@ -130,23 +134,23 @@ func (s *Service) ReactionRemovedEvent(e *slackevents.ReactionRemovedEvent) {
 
 	// add the user if he doesn't exist yet
 	slackUID := e.User
-	m, err := s.GetMember(slackUID)
+	m, err := s.GetMemberOrCreate(slackUID)
 	if err != nil {
 		return
 	}
 	if m.MealsEaten > 0 {
 		m.MealsEaten -= 1
 	}
-	err = s.store.update(m)
+	_, err = s.repository.updateMealsEaten(m.ID, m.MealsEaten)
 	if err != nil {
 		return
 	}
 }
 
 func (s *Service) GetAllMembers() ([]Member, error) {
-	members, err := s.store.getAll()
+	members, err := s.repository.getAll()
 	if err != nil {
-		return nil, err
+		return nil, fmt.Errorf("GetAllMembers: %w", err)
 	}
 	return members, nil
 }
@@ -166,7 +170,7 @@ func weeklyUpdateBlock(members []Member) slack.MsgOption {
 
 		realNameField := slack.NewTextBlockObject("mrkdwn", fmt.Sprintf("*Real Name:*\n%s %s", member.FirstName, member.LastName), false, false)
 		slackNameField := slack.NewTextBlockObject("mrkdwn", fmt.Sprintf("*Slack Name:*\n<@%s>", member.SlackUID), false, false)
-		ratioField := slack.NewTextBlockObject("mrkdwn", fmt.Sprintf("*Ratio Status:*\n%s", ratioStatus(member.MealsEaten, member.MealsCooked)), false, false)
+		ratioField := slack.NewTextBlockObject("mrkdwn", fmt.Sprintf("*Ratio Status:*\n%s", ratioStatus(uint(member.MealsEaten), uint(member.MealsCooked))), false, false)
 
 		fieldSlice := make([]*slack.TextBlockObject, 0)
 		fieldSlice = append(fieldSlice, realNameField)
@@ -206,16 +210,16 @@ func mealsEatenToMealsCooked(mealsEaten uint, mealsCooked uint) float32 {
 func (s *Service) WeeklyUpdate() error {
 	members, err := s.GetAllMembers()
 	if err != nil {
-		return fmt.Errorf("GetAllMembers: %w", err)
+		return fmt.Errorf("WeeklyUpdate GetAllMembers: %w", err)
 	}
 
 	sort.Slice(members, func(ii, jj int) bool {
-		return mealsEatenToMealsCooked(members[ii].MealsEaten, members[ii].MealsCooked) > mealsEatenToMealsCooked(members[jj].MealsEaten, members[jj].MealsCooked)
+		return mealsEatenToMealsCooked(uint(members[ii].MealsEaten), uint(members[ii].MealsCooked)) > mealsEatenToMealsCooked(uint(members[jj].MealsEaten), uint(members[jj].MealsCooked))
 	})
 
-	_, _, err = s.slackClient.PostMessage(s.slackChannel, weeklyUpdateBlock(members))
+	_, _, err = s.slackCfg.Client.PostMessage(s.slackCfg.Channel, weeklyUpdateBlock(members))
 	if err != nil {
-		return fmt.Errorf("slack PostMessage: %w", err)
+		return fmt.Errorf("WeeklyUpdate PostMessage: %w", err)
 	}
 	return nil
 }
