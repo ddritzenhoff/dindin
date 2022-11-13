@@ -1,6 +1,7 @@
 This is a slack bot to organize a dinner rotation between my friends and me :)
 
 Sample config.yaml:
+
 ```
 http:
   rest:
@@ -18,6 +19,7 @@ slack:
   clientID: ""
   clientSecret: ""
   signingSecret: ""
+  isProd: false
   dev:
     channelID: ""
   prod:
