@@ -5,16 +5,16 @@ import (
 	"log"
 	"net"
 
+	"database/sql"
+
 	"github.com/ddritzenhoff/dindin/internal/configs"
-	"github.com/ddritzenhoff/dindin/internal/day"
+	"github.com/ddritzenhoff/dindin/internal/cooking"
 	"github.com/ddritzenhoff/dindin/internal/http/rest"
 	"github.com/ddritzenhoff/dindin/internal/http/rpc"
 	"github.com/ddritzenhoff/dindin/internal/http/rpc/pb"
 	"github.com/ddritzenhoff/dindin/internal/member"
-	"github.com/slack-go/slack"
+	_ "github.com/mattn/go-sqlite3"
 	"google.golang.org/grpc"
-	"gorm.io/driver/sqlite"
-	"gorm.io/gorm"
 )
 
 func main() {
@@ -28,18 +28,17 @@ func main() {
 		log.Fatal(err)
 	}
 
-	db, err := gorm.Open(sqlite.Open(dbName), &gorm.Config{})
+	db, err := sql.Open("sqlite3", dbName)
 	if err != nil {
 		log.Fatal(err)
 	}
+	defer db.Close()
 
 	slackConfig, err := cfg.SlackConfig()
 	if err != nil {
 		log.Fatal(err)
 	}
-	slackClient := slack.New(slackConfig.BotUserToken)
-
-	ces, err := day.NewEventService(db, slackConfig.BotTestChannel, slackClient)
+	ces, err := cooking.NewService(db, slackConfig)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -70,7 +69,7 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	// create a http instance
-	s := rpc.NewServer(ces, ms, slackClient)
+	s := rpc.NewServer(ces, ms, slackConfig)
 	// create a gRPC http object
 	grpcServer := grpc.NewServer()
 	// attach the Ping service to the http
