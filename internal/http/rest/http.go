@@ -5,15 +5,16 @@ import (
 	"log"
 	"net/http"
 
+	"github.com/ddritzenhoff/dindin/internal/configs"
 	"github.com/ddritzenhoff/dindin/internal/member"
 )
 
-type HTTP struct {
+type Server struct {
 	server *http.Server
-	config *Config
+	config *configs.HTTP
 }
 
-func (h *HTTP) Start() {
+func (h *Server) Start() {
 	log.Printf("HTTP server listening on host %s and port %s\n", h.config.Host, h.config.Port)
 	err := h.server.ListenAndServe()
 	if err != nil && err != http.ErrServerClosed {
@@ -21,19 +22,14 @@ func (h *HTTP) Start() {
 	}
 }
 
-type Config struct {
-	Host string
-	Port string
-}
-
-func NewRESTService(cfg *Config, personService *member.Service) (*HTTP, error) {
+func NewRESTService(cfg *configs.HTTP, personService *member.Service) (*Server, error) {
 	h := &Handlers{personService: personService}
 	httpServer := &http.Server{
 		Addr:    fmt.Sprintf("%s:%s", cfg.Host, cfg.Port),
 		Handler: h.routes(),
 	}
 
-	return &HTTP{
+	return &Server{
 		server: httpServer,
 		config: cfg,
 	}, nil

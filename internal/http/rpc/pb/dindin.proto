@@ -14,7 +14,7 @@ message GetMembersResponse {
   string slackUID = 5;
 }
 
-message CookingDay {
+message Cooking {
   int32 day = 1;
   int32 month = 2;
   int32 year = 3;
@@ -22,7 +22,7 @@ message CookingDay {
 }
 
 message AssignCooksRequest {
-  repeated CookingDay CookingDays = 1;
+  repeated Cooking Cookings = 1;
 }
 
 message EmptyMessage {}

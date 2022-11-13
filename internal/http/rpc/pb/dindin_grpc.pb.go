@@ -2,7 +2,7 @@
 // versions:
 // - protoc-gen-go-grpc v1.2.0
 // - protoc             v3.21.7
-// source: pb/dindin.proto
+// source: internal/http/rpc/pb/dindin.proto
 
 package pb
 
@@ -273,5 +273,5 @@ var SlackActions_ServiceDesc = grpc.ServiceDesc{
 			ServerStreams: true,
 		},
 	},
-	Metadata: "pb/dindin.proto",
+	Metadata: "internal/http/rpc/pb/dindin.proto",
 }

@@ -35,9 +35,9 @@ func getDayDifference(now time.Weekday, then time.Weekday) int {
 	return (int(then) - int(now) + 7) % 7
 }
 
-func buildCookingDay(now time.Time, then time.Weekday, slackUID string) *pb.CookingDay {
+func buildCookingDay(now time.Time, then time.Weekday, slackUID string) *pb.Cooking {
 	year, month, day := now.AddDate(0, 0, getDayDifference(now.Weekday(), then)).Date()
-	return &pb.CookingDay{
+	return &pb.Cooking{
 		Day:      int32(day),
 		Month:    int32(month),
 		Year:     int32(year),
@@ -58,37 +58,37 @@ var assignCooks = &cobra.Command{
 		defer conn.Close()
 
 		now := time.Now()
-		var cookingDays []*pb.CookingDay
+		var cookings []*pb.Cooking
 
 		if sundaySlackUID != "" {
-			cookingDays = append(cookingDays, buildCookingDay(now, time.Sunday, sundaySlackUID))
+			cookings = append(cookings, buildCookingDay(now, time.Sunday, sundaySlackUID))
 		}
 		if mondaySlackUID != "" {
-			cookingDays = append(cookingDays, buildCookingDay(now, time.Monday, mondaySlackUID))
+			cookings = append(cookings, buildCookingDay(now, time.Monday, mondaySlackUID))
 		}
 		if tuesdaySlackUID != "" {
-			cookingDays = append(cookingDays, buildCookingDay(now, time.Tuesday, tuesdaySlackUID))
+			cookings = append(cookings, buildCookingDay(now, time.Tuesday, tuesdaySlackUID))
 		}
 		if wednesdaySlackUID != "" {
-			cookingDays = append(cookingDays, buildCookingDay(now, time.Wednesday, wednesdaySlackUID))
+			cookings = append(cookings, buildCookingDay(now, time.Wednesday, wednesdaySlackUID))
 		}
 		if thursdaySlackUID != "" {
-			cookingDays = append(cookingDays, buildCookingDay(now, time.Thursday, thursdaySlackUID))
+			cookings = append(cookings, buildCookingDay(now, time.Thursday, thursdaySlackUID))
 		}
 		if fridaySlackUID != "" {
-			cookingDays = append(cookingDays, buildCookingDay(now, time.Friday, fridaySlackUID))
+			cookings = append(cookings, buildCookingDay(now, time.Friday, fridaySlackUID))
 		}
 		if saturdaySlackUID != "" {
-			cookingDays = append(cookingDays, buildCookingDay(now, time.Saturday, saturdaySlackUID))
+			cookings = append(cookings, buildCookingDay(now, time.Saturday, saturdaySlackUID))
 		}
 
-		if len(cookingDays) == 0 {
+		if len(cookings) == 0 {
 			fmt.Println("didn't specify any days, so nothing happened..")
 			return
 		}
 
 		slackActionsClient := pb.NewSlackActionsClient(conn)
-		_, err = slackActionsClient.AssignCooks(context.Background(), &pb.AssignCooksRequest{CookingDays: cookingDays})
+		_, err = slackActionsClient.AssignCooks(context.Background(), &pb.AssignCooksRequest{Cookings: cookings})
 		if err != nil {
 			log.Fatal(err)
 		}
