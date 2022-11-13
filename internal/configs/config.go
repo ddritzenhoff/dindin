@@ -3,7 +3,7 @@ package configs
 import (
 	"fmt"
 
-	"github.com/ddritzenhoff/dindin/internal/http/rest"
+	"github.com/slack-go/slack"
 	"github.com/spf13/viper"
 )
 
@@ -17,31 +17,59 @@ func (cfg *Configs) DBName() (string, error) {
 	return "", fmt.Errorf("couldn't find the config's database name attribute")
 }
 
-func (cfg *Configs) REST() (*rest.Config, error) {
+type HTTP struct {
+	Host string
+	Port string
+}
+
+func (cfg *Configs) REST() (*HTTP, error) {
 	if !viper.IsSet("http.rest.port") {
 		return nil, fmt.Errorf("couldn't find the config's rest port attribute")
 	}
-	return &rest.Config{
+	return &HTTP{
 		Host: viper.GetString("http.rest.host"),
 		Port: viper.GetString("http.rest.port"),
 	}, nil
 }
 
-func (cfg *Configs) GRPC() (*rest.Config, error) {
+func (cfg *Configs) GRPC() (*HTTP, error) {
 	if !viper.IsSet("http.grpc.host") {
 		return nil, fmt.Errorf("couldn't find the config's grpc host attribute")
 	}
 	if !viper.IsSet("http.grpc.port") {
 		return nil, fmt.Errorf("couldn't find the config's grpc port attribute")
 	}
-	return &rest.Config{
+	return &HTTP{
 		Host: viper.GetString("http.grpc.host"),
 		Port: viper.GetString("http.grpc.port"),
 	}, nil
 }
 
-func (cfg *Configs) SlackConfig() (*slackConfig, error) {
-	return newSlackConfig()
+type SlackConfig struct {
+	Channel string
+	Client  *slack.Client
+}
+
+func (cfg *Configs) SlackConfig() (*SlackConfig, error) {
+	if !viper.IsSet("slack.botSigningKey") {
+		return nil, fmt.Errorf("couldn't find the config's slack botSigningKey")
+	}
+	if !viper.IsSet("slack.dev.channelID") {
+		return nil, fmt.Errorf("couldn't find the config's slack dev channelID")
+	}
+	if !viper.IsSet("slack.prod.channelID") {
+		return nil, fmt.Errorf("couldn't find the config's slack prod channelID")
+	}
+	var channel string
+	if viper.GetBool("slack.isProd") {
+		channel = viper.GetString("slack.prod.channelID")
+	} else {
+		channel = viper.GetString("slack.dev.channelID")
+	}
+	return &SlackConfig{
+		Channel: channel,
+		Client:  slack.New(viper.GetString("slack.botSigningKey")),
+	}, nil
 }
 
 func NewConfigService() (*Configs, error) {
