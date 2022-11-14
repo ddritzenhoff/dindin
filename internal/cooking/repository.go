@@ -7,7 +7,7 @@ import (
 )
 
 type repository interface {
-	create(e Day) (*Day, error)
+	create(d Day) (*Day, error)
 	get(id int64) (*Day, error)
 	getBySlackMessageID(slackMessageID string) (*Day, error)
 	getByDate(year int, month int, day int) (*Day, error)
@@ -20,19 +20,19 @@ type Repository struct {
 }
 
 func NewRepository(db *sql.DB) (*Repository, error) {
-	dr := Repository{db}
-	err := dr.Migrate()
+	r := Repository{db}
+	err := r.Migrate()
 	if err != nil {
 		return nil, fmt.Errorf("NewRepository: %w", err)
 	}
-	return &dr, nil
+	return &r, nil
 }
 
-func (dr *Repository) Migrate() error {
+func (r *Repository) Migrate() error {
 	stmt := `
     CREATE TABLE IF NOT EXISTS Events(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-		created_at INTEGER NOT NULL
+		created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL,
 		cooking_time INTEGER NOT NULL UNIQUE,
         chef_slack_uid TEXT NOT NULL,
@@ -41,23 +41,23 @@ func (dr *Repository) Migrate() error {
     );
     `
 
-	_, err := dr.db.Exec(stmt)
+	_, err := r.db.Exec(stmt)
 	return err
 }
 
-func (dr *Repository) create(e Day) (*Day, error) {
+func (r *Repository) create(d Day) (*Day, error) {
 	now := time.Now().Unix()
-	if e.CookingTime == 0 {
+	if d.CookingTime == 0 {
 		return nil, fmt.Errorf("no cooking time specified")
 	}
-	if e.ChefSlackUID == "" {
+	if d.ChefSlackUID == "" {
 		return nil, fmt.Errorf("no chef slackUID specified")
 	}
-	stmt, err := dr.db.Prepare("insert or ignore into Events(created_at, updated_at, cooking_time, chef_slack_uid, meal_description, slack_message_id) values(?,?,?,?,?,?)")
+	stmt, err := r.db.Prepare("insert or ignore into Events(created_at, updated_at, cooking_time, chef_slack_uid, meal_description, slack_message_id) values(?,?,?,?,?,?)")
 	if err != nil {
 		return nil, fmt.Errorf("create prepare: %w", err)
 	}
-	res, err := stmt.Exec(now, now, e.CookingTime, e.ChefSlackUID, e.MealDescription, e.SlackMessageID)
+	res, err := stmt.Exec(now, now, d.CookingTime, d.ChefSlackUID, d.MealDescription, d.SlackMessageID)
 	if err != nil {
 		return nil, fmt.Errorf("create Exec: %w", err)
 	}
@@ -65,26 +65,26 @@ func (dr *Repository) create(e Day) (*Day, error) {
 	if err != nil {
 		return nil, fmt.Errorf("create LastInsertId: %w", err)
 	}
-	e.ID = id
-	return &e, nil
+	d.ID = id
+	return &d, nil
 }
 
-func (dr *Repository) get(id int64) (*Day, error) {
-	var e Day
-	err := dr.db.QueryRow("select * from Events where id = ?", id).Scan(&e)
+func (r *Repository) get(id int64) (*Day, error) {
+	var d Day
+	err := r.db.QueryRow("select * from Events where id = ?", id).Scan(&d.ID, &d.CreatedAt, &d.UpdatedAt, &d.CookingTime, &d.ChefSlackUID, &d.MealDescription, &d.SlackMessageID)
 	if err != nil {
 		return nil, fmt.Errorf("get: %w", err)
 	}
-	return &e, nil
+	return &d, nil
 }
 
-func (dr *Repository) getBySlackMessageID(slackMessageID string) (*Day, error) {
-	var e Day
-	err := dr.db.QueryRow("select * from Events where slack_message_id = ?", slackMessageID).Scan(&e)
+func (r *Repository) getBySlackMessageID(slackMessageID string) (*Day, error) {
+	var d Day
+	err := r.db.QueryRow("select * from Events where slack_message_id = ?", slackMessageID).Scan(&d.ID, &d.CreatedAt, &d.UpdatedAt, &d.CookingTime, &d.ChefSlackUID, &d.MealDescription, &d.SlackMessageID)
 	if err != nil {
 		return nil, fmt.Errorf("getBySlackMessageID: %w", err)
 	}
-	return &e, nil
+	return &d, nil
 }
 
 func TimeFromDate(year int, month int, day int) time.Time {
@@ -95,18 +95,18 @@ func UnixTimeFromDate(year int, month int, day int) int64 {
 	return TimeFromDate(year, month, day).Unix()
 }
 
-func (dr *Repository) getByDate(year int, month int, day int) (*Day, error) {
+func (r *Repository) getByDate(year int, month int, day int) (*Day, error) {
 	unixTime := UnixTimeFromDate(year, month, day)
-	var e Day
-	err := dr.db.QueryRow("select * from Events where cooking_time = ?", unixTime).Scan(&e)
+	var d Day
+	err := r.db.QueryRow("select * from Events where cooking_time = ?", unixTime).Scan(&d.ID, &d.CreatedAt, &d.UpdatedAt, &d.CookingTime, &d.ChefSlackUID, &d.MealDescription, &d.SlackMessageID)
 	if err != nil {
 		return nil, fmt.Errorf("getByDate: %w", err)
 	}
-	return &e, nil
+	return &d, nil
 }
 
-func (dr *Repository) deleteBySlackMessageID(slackMessageID string) error {
-	res, err := dr.db.Exec("delete * from Events where slack_message_id = ?", slackMessageID)
+func (r *Repository) deleteBySlackMessageID(slackMessageID string) error {
+	res, err := r.db.Exec("delete * from Events where slack_message_id = ?", slackMessageID)
 	if err != nil {
 		return fmt.Errorf("deleteBySlackMessageID: %w", err)
 	}
@@ -120,11 +120,11 @@ func (dr *Repository) deleteBySlackMessageID(slackMessageID string) error {
 	return nil
 }
 
-func (dr *Repository) update(id int64, updated Day) (*Day, error) {
+func (r *Repository) update(id int64, updated Day) (*Day, error) {
 	if id == 0 {
 		return nil, fmt.Errorf("invalid updated ID")
 	}
-	res, err := dr.db.Exec("update Events set updated_at = ?, cooking_time = ?, chef_slack_uid = ?, meal_description = ?, slack_message_id = ? where id = ?", time.Now().Unix(), updated.CookingTime, updated.ChefSlackUID, updated.MealDescription, updated.SlackMessageID, id)
+	res, err := r.db.Exec("update Events set updated_at = ?, cooking_time = ?, chef_slack_uid = ?, meal_description = ?, slack_message_id = ? where id = ?", time.Now().Unix(), updated.CookingTime, updated.ChefSlackUID, updated.MealDescription, updated.SlackMessageID, id)
 	if err != nil {
 		return nil, fmt.Errorf("update: %w", err)
 	}
