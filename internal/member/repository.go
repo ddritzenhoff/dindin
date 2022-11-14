@@ -33,7 +33,7 @@ func (r *Repository) Migrate() error {
 	stmt := `
     CREATE TABLE IF NOT EXISTS Members(
         id INTEGER PRIMARY KEY AUTOINCREMENT,
-		created_at INTEGER NOT NULL
+		created_at INTEGER NOT NULL,
         updated_at INTEGER NOT NULL,
 		slack_uid TEXT NOT NULL UNIQUE,
         first_name TEXT,
