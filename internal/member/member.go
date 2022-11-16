@@ -30,13 +30,13 @@ type Service struct {
 	slackCfg       *configs.SlackConfig
 }
 
-func NewService(db *sql.DB, cs *cooking.Service) (*Service, error) {
-	r, err := newRepository(db)
+func NewService(db *sql.DB, cs *cooking.Service, slackCfg *configs.SlackConfig) (*Service, error) {
+	r, err := NewRepository(db)
 	if err != nil {
 		return nil, fmt.Errorf("NewService: %w", err)
 	}
 
-	return &Service{repository: r, cookingService: cs}, nil
+	return &Service{repository: r, cookingService: cs, slackCfg: slackCfg}, nil
 }
 
 func (s *Service) LikedMessage(slackUID string) error {
@@ -79,72 +79,72 @@ func (s *Service) createMember(slackUID string) (*Member, error) {
 	return m, nil
 }
 
-// TODO (ddritzenhoff) either add logging or figure out a way to display the error to the user
-// ReactionAddedEvent determines whether to add +1 to the meals eaten of this specific user
-func (s *Service) ReactionAddedEvent(e *slackevents.ReactionAddedEvent) {
+func (s *Service) ReactionAddedEvent(e *slackevents.ReactionAddedEvent) error {
 	// Don't bother if the reaction isn't a like
 	if e.Reaction != "+1" {
-		return
+		return fmt.Errorf("ReactionAddedEvent +1: got %s in channel %s from user %s", e.Reaction, e.Item.Channel, e.User)
 	}
 
 	// check to see whether the reaction was on a cooking event message
-	eventMessageID := e.Item.Timestamp
-	eatingEvent, exists := s.cookingService.GetEatingEvent(eventMessageID)
+	slackMessageID := e.Item.Timestamp
+	eatingEvent, exists := s.cookingService.GetEatingEvent(slackMessageID)
 	if !exists {
-		return
+		return fmt.Errorf("ReactionAddedEvent GetEatingEvent: got %s in channel %s from user %s with timestamp %s", e.Reaction, e.Item.Channel, e.User, e.Item.Timestamp)
 	}
 
 	// if the reaction was on an expired cooking event message, don't do anything
 	if eatingEvent.IsEatingMessageExpired() {
-		return
+		return fmt.Errorf("ReactionAddedEvent IsEatingMessageExpired: slackMessageID: %s", slackMessageID)
 	}
 
 	// add the user if he doesn't exist yet
 	slackUID := e.User
 	m, err := s.GetMemberOrCreate(slackUID)
 	if err != nil {
-		return
+		return fmt.Errorf("ReactionAddedEvent GetMemberOrCreate: %w", err)
 	}
 
 	m.MealsEaten += 1
 	_, err = s.repository.updateMealsEaten(m.ID, m.MealsEaten)
 	if err != nil {
-		return
+		return fmt.Errorf("ReactionAddedEvent updateMealsEaten: %w", err)
 	}
+	return nil
 }
 
 // ReactionRemovedEvent determines whether to add -1 to the meals eaten of this specific user
-func (s *Service) ReactionRemovedEvent(e *slackevents.ReactionRemovedEvent) {
+func (s *Service) ReactionRemovedEvent(e *slackevents.ReactionRemovedEvent) error {
 	// Don't bother if the reaction isn't a like
 	if e.Reaction != "+1" {
-		return
+		return fmt.Errorf("ReactionRemovedEvent +1: got %s in channel %s from user %s", e.Reaction, e.Item.Channel, e.User)
 	}
 
 	// check to see whether the reaction was on a cooking event message
-	eventMessageID := e.Item.Timestamp
-	eatingEvent, exists := s.cookingService.GetEatingEvent(eventMessageID)
+	slackMessageID := e.Item.Timestamp
+	eatingEvent, exists := s.cookingService.GetEatingEvent(slackMessageID)
 	if !exists {
-		return
+		return fmt.Errorf("ReactionRemovedEvent GetEatingEvent: got %s in channel %s from user %s with timestamp %s", e.Reaction, e.Item.Channel, e.User, e.Item.Timestamp)
 	}
 
 	// if the reaction was on an expired cooking event message, don't do anything
 	if eatingEvent.IsEatingMessageExpired() {
-		return
+		return fmt.Errorf("ReactionRemovedEvent IsEatingMessageExpired: slackMessageID: %s", slackMessageID)
 	}
 
 	// add the user if he doesn't exist yet
 	slackUID := e.User
 	m, err := s.GetMemberOrCreate(slackUID)
 	if err != nil {
-		return
+		return fmt.Errorf("ReactionRemovedEvent GetMemberOrCreate: %w", err)
 	}
 	if m.MealsEaten > 0 {
 		m.MealsEaten -= 1
 	}
 	_, err = s.repository.updateMealsEaten(m.ID, m.MealsEaten)
 	if err != nil {
-		return
+		return fmt.Errorf("ReactionRemovedEvent updateMealsEaten: %s", err)
 	}
+	return nil
 }
 
 func (s *Service) GetAllMembers() ([]Member, error) {

@@ -20,7 +20,7 @@ type Repository struct {
 	db *sql.DB
 }
 
-func newRepository(db *sql.DB) (*Repository, error) {
+func NewRepository(db *sql.DB) (*Repository, error) {
 	r := Repository{db}
 	err := r.Migrate()
 	if err != nil {
@@ -70,7 +70,7 @@ func (r *Repository) create(m Member) (*Member, error) {
 
 func (r *Repository) get(id int64) (*Member, error) {
 	var m Member
-	err := r.db.QueryRow("select * from Members where id = ?", id).Scan(&m)
+	err := r.db.QueryRow("select * from Members where id = ?", id).Scan(&m.ID, &m.CreatedAt, &m.UpdatedAt, &m.SlackUID, &m.FirstName, &m.LastName, &m.MealsEaten, &m.MealsCooked)
 	if err != nil {
 		return nil, fmt.Errorf("get: %w", err)
 	}
@@ -79,7 +79,7 @@ func (r *Repository) get(id int64) (*Member, error) {
 
 func (r *Repository) getBySlackUID(slackUID string) (*Member, error) {
 	var m Member
-	err := r.db.QueryRow("select * from Members where slack_uid = ?", slackUID).Scan(&m)
+	err := r.db.QueryRow("select * from Members where slack_uid = ?", slackUID).Scan(&m.ID, &m.CreatedAt, &m.UpdatedAt, &m.SlackUID, &m.FirstName, &m.LastName, &m.MealsEaten, &m.MealsCooked)
 	if err != nil {
 		return nil, fmt.Errorf("getBySlackUID: %w", err)
 	}
@@ -89,16 +89,19 @@ func (r *Repository) getBySlackUID(slackUID string) (*Member, error) {
 func (r *Repository) getAll() ([]Member, error) {
 	rows, err := r.db.Query("select * from Members")
 	if err != nil {
-		return nil, fmt.Errorf("getAll: %w", err)
+		return nil, fmt.Errorf("getAll Query: %w", err)
 	}
 	defer rows.Close()
 	var all []Member
 	for rows.Next() {
 		var m Member
 		if err := rows.Scan(&m.ID, &m.CreatedAt, &m.UpdatedAt, &m.SlackUID, &m.FirstName, &m.LastName, &m.MealsEaten, &m.MealsCooked); err != nil {
-			return nil, fmt.Errorf("getAll: %w", err)
+			return nil, fmt.Errorf("getAll Scan: %w", err)
 		}
 		all = append(all, m)
+	}
+	if err := rows.Err(); err != nil {
+		return nil, fmt.Errorf("getAll Rows: %w", err)
 	}
 	return all, nil
 }
