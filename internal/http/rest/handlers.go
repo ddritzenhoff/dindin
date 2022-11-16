@@ -11,7 +11,15 @@ import (
 )
 
 type Handlers struct {
-	personService *member.Service
+	logger        *log.Logger
+	memberService *member.Service
+}
+
+func NewHandlers(logger *log.Logger, memberService *member.Service) *Handlers {
+	return &Handlers{
+		logger:        logger,
+		memberService: memberService,
+	}
 }
 
 func (h *Handlers) routes() *http.ServeMux {
@@ -53,9 +61,15 @@ func (h *Handlers) handleSlackEvent(w http.ResponseWriter, r *http.Request) {
 	if event.Type == slackevents.CallbackEvent {
 		switch innerEvent := event.InnerEvent.Data.(type) {
 		case *slackevents.ReactionAddedEvent:
-			h.personService.ReactionAddedEvent(innerEvent)
+			err := h.memberService.ReactionAddedEvent(innerEvent)
+			if err != nil {
+				h.logger.Printf("%s", err.Error())
+			}
 		case *slackevents.ReactionRemovedEvent:
-			h.personService.ReactionRemovedEvent(innerEvent)
+			err := h.memberService.ReactionRemovedEvent(innerEvent)
+			if err != nil {
+				h.logger.Printf("%s", err.Error())
+			}
 		}
 	}
 }

@@ -22,8 +22,8 @@ func (h *Server) Start() {
 	}
 }
 
-func NewRESTService(cfg *configs.HTTP, personService *member.Service) (*Server, error) {
-	h := &Handlers{personService: personService}
+func NewRESTService(logger *log.Logger, cfg *configs.HTTP, memberService *member.Service) (*Server, error) {
+	h := NewHandlers(logger, memberService)
 	httpServer := &http.Server{
 		Addr:    fmt.Sprintf("%s:%s", cfg.Host, cfg.Port),
 		Handler: h.routes(),

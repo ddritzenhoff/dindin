@@ -4,6 +4,7 @@ import (
 	"fmt"
 	"log"
 	"net"
+	"os"
 
 	"database/sql"
 
@@ -18,6 +19,8 @@ import (
 )
 
 func main() {
+	logger := log.New(os.Stdout, "DEBUG: ", log.LstdFlags)
+
 	cfg, err := configs.NewConfigService()
 	if err != nil {
 		log.Fatal(err)
@@ -43,7 +46,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	ms, err := member.NewService(db, ces)
+	ms, err := member.NewService(db, ces, slackConfig)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -53,7 +56,7 @@ func main() {
 		log.Fatal(err)
 	}
 
-	h, err := rest.NewRESTService(restCfg, ms)
+	h, err := rest.NewRESTService(logger, restCfg, ms)
 	if err != nil {
 		log.Fatal(err)
 	}
