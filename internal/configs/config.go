@@ -2,6 +2,7 @@ package configs
 
 import (
 	"fmt"
+	"log"
 
 	"github.com/slack-go/slack"
 	"github.com/spf13/viper"
@@ -66,9 +67,13 @@ func (cfg *Configs) SlackConfig() (*SlackConfig, error) {
 	} else {
 		channel = viper.GetString("slack.dev.channelID")
 	}
+	client := slack.New(viper.GetString("slack.botSigningKey"))
+	if client == nil {
+		log.Fatal("slack client reference is nil")
+	}
 	return &SlackConfig{
 		Channel: channel,
-		Client:  slack.New(viper.GetString("slack.botSigningKey")),
+		Client:  client,
 	}, nil
 }
 
@@ -83,7 +88,7 @@ func NewConfigService() (*Configs, error) {
 	viper.AddConfigPath("$HOME/.")
 	err := viper.ReadInConfig()
 	if err != nil {
-		panic(fmt.Errorf("fatal error config file: %w", err))
+		log.Fatal("fatal error config file: %w", err)
 	}
 	return &Configs{}, nil
 }
