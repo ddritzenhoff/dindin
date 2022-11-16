@@ -93,8 +93,8 @@ func (s *Service) AssignCooks(cookings []*pb.Cooking) error {
 		if err != nil {
 			if errors.Is(err, sql.ErrNoRows) {
 				_, err = s.repository.create(Day{
-					SlackMessageID: cooking.SlackUID,
-					CookingTime:    UnixTimeFromDate(int(cooking.Year), int(cooking.Month), int(cooking.Day)),
+					ChefSlackUID: cooking.SlackUID,
+					CookingTime:  UnixTimeFromDate(int(cooking.Year), int(cooking.Month), int(cooking.Day)),
 				})
 				if err != nil {
 					return fmt.Errorf("AssignCooks create: %w", err)
