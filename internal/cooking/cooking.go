@@ -56,6 +56,14 @@ func (s *Service) GetEatingEvent(slackMessageID string) (eatingEvent *Day, exist
 	return event, true
 }
 
+func (s *Service) CookingByDate(year int, month time.Month, day int) (*Day, error) {
+	d, err := s.repository.getByDate(year, month, day)
+	if err != nil {
+		return nil, fmt.Errorf("CookingByDate: %w", err)
+	}
+	return d, nil
+}
+
 func isEatingTomorrowBlock() slack.MsgOption {
 	// Header Section
 	headerText := slack.NewTextBlockObject("mrkdwn", "hey <!channel>, please react to this message (:thumbsup:) if you are eating tomorrow", false, false)
@@ -68,7 +76,7 @@ func isEatingTomorrowBlock() slack.MsgOption {
 
 func (s *Service) PostEatingTomorrow() error {
 	year, month, day := time.Now().AddDate(0, 0, 1).Date()
-	e, err := s.repository.getByDate(year, int(month), day)
+	e, err := s.repository.getByDate(year, month, day)
 	if err != nil {
 		return err
 	}
@@ -89,21 +97,21 @@ func (s *Service) PostEatingTomorrow() error {
 
 func (s *Service) AssignCooks(cookings []*pb.Cooking) error {
 	for _, cooking := range cookings {
-		d, err := s.repository.getByDate(int(cooking.Year), int(cooking.Month), int(cooking.Day))
-		if err != nil {
-			if errors.Is(err, sql.ErrNoRows) {
-				_, err = s.repository.create(Day{
-					ChefSlackUID: cooking.SlackUID,
-					CookingTime:  UnixTimeFromDate(int(cooking.Year), int(cooking.Month), int(cooking.Day)),
-				})
-				if err != nil {
-					return fmt.Errorf("AssignCooks create: %w", err)
-				}
-				return err
+		d, err := s.repository.getByDate(int(cooking.Year), time.Month(cooking.Month), int(cooking.Day))
+		if err != nil && errors.Is(err, sql.ErrNoRows) {
+			_, err = s.repository.create(Day{
+				ChefSlackUID: cooking.Slack_UID,
+				CookingTime:  UnixTimeFromDate(int(cooking.Year), time.Month(cooking.Month), int(cooking.Day)),
+			})
+			if err != nil {
+				return fmt.Errorf("AssignCooks create: %w", err)
 			}
+		} else if err != nil {
+			return err
+		} else {
+			d.ChefSlackUID = cooking.Slack_UID
+			s.repository.update(d.ID, *d)
 		}
-		d.ChefSlackUID = cooking.SlackUID
-		s.repository.update(d.ID, *d)
 	}
 	return nil
 }

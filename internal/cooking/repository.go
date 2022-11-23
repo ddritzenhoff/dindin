@@ -10,7 +10,7 @@ type repository interface {
 	create(d Day) (*Day, error)
 	get(id int64) (*Day, error)
 	getBySlackMessageID(slackMessageID string) (*Day, error)
-	getByDate(year int, month int, day int) (*Day, error)
+	getByDate(year int, month time.Month, day int) (*Day, error)
 	deleteBySlackMessageID(slackMessageID string) error
 	update(id int64, updated Day) (*Day, error)
 }
@@ -87,15 +87,15 @@ func (r *Repository) getBySlackMessageID(slackMessageID string) (*Day, error) {
 	return &d, nil
 }
 
-func TimeFromDate(year int, month int, day int) time.Time {
+func TimeFromDate(year int, month time.Month, day int) time.Time {
 	return time.Date(year, time.Month(month), day, 0, 0, 0, 0, time.UTC)
 }
 
-func UnixTimeFromDate(year int, month int, day int) int64 {
+func UnixTimeFromDate(year int, month time.Month, day int) int64 {
 	return TimeFromDate(year, month, day).Unix()
 }
 
-func (r *Repository) getByDate(year int, month int, day int) (*Day, error) {
+func (r *Repository) getByDate(year int, month time.Month, day int) (*Day, error) {
 	unixTime := UnixTimeFromDate(year, month, day)
 	var d Day
 	err := r.db.QueryRow("select * from Events where cooking_time = ?", unixTime).Scan(&d.ID, &d.CreatedAt, &d.UpdatedAt, &d.CookingTime, &d.ChefSlackUID, &d.MealDescription, &d.SlackMessageID)
