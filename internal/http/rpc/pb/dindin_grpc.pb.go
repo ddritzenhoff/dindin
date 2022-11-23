@@ -27,6 +27,7 @@ type SlackActionsClient interface {
 	GetMembers(ctx context.Context, in *EmptyMessage, opts ...grpc.CallOption) (SlackActions_GetMembersClient, error)
 	WeeklyUpdate(ctx context.Context, in *EmptyMessage, opts ...grpc.CallOption) (*EmptyMessage, error)
 	AssignCooks(ctx context.Context, in *AssignCooksRequest, opts ...grpc.CallOption) (*EmptyMessage, error)
+	UpcomingCooks(ctx context.Context, in *UpcomingCooksRequest, opts ...grpc.CallOption) (*UpcomingCooksResponse, error)
 }
 
 type slackActionsClient struct {
@@ -105,6 +106,15 @@ func (c *slackActionsClient) AssignCooks(ctx context.Context, in *AssignCooksReq
 	return out, nil
 }
 
+func (c *slackActionsClient) UpcomingCooks(ctx context.Context, in *UpcomingCooksRequest, opts ...grpc.CallOption) (*UpcomingCooksResponse, error) {
+	out := new(UpcomingCooksResponse)
+	err := c.cc.Invoke(ctx, "/pb.SlackActions/UpcomingCooks", in, out, opts...)
+	if err != nil {
+		return nil, err
+	}
+	return out, nil
+}
+
 // SlackActionsServer is the server API for SlackActions service.
 // All implementations must embed UnimplementedSlackActionsServer
 // for forward compatibility
@@ -114,6 +124,7 @@ type SlackActionsServer interface {
 	GetMembers(*EmptyMessage, SlackActions_GetMembersServer) error
 	WeeklyUpdate(context.Context, *EmptyMessage) (*EmptyMessage, error)
 	AssignCooks(context.Context, *AssignCooksRequest) (*EmptyMessage, error)
+	UpcomingCooks(context.Context, *UpcomingCooksRequest) (*UpcomingCooksResponse, error)
 	mustEmbedUnimplementedSlackActionsServer()
 }
 
@@ -135,6 +146,9 @@ func (UnimplementedSlackActionsServer) WeeklyUpdate(context.Context, *EmptyMessa
 }
 func (UnimplementedSlackActionsServer) AssignCooks(context.Context, *AssignCooksRequest) (*EmptyMessage, error) {
 	return nil, status.Errorf(codes.Unimplemented, "method AssignCooks not implemented")
+}
+func (UnimplementedSlackActionsServer) UpcomingCooks(context.Context, *UpcomingCooksRequest) (*UpcomingCooksResponse, error) {
+	return nil, status.Errorf(codes.Unimplemented, "method UpcomingCooks not implemented")
 }
 func (UnimplementedSlackActionsServer) mustEmbedUnimplementedSlackActionsServer() {}
 
@@ -242,6 +256,24 @@ func _SlackActions_AssignCooks_Handler(srv interface{}, ctx context.Context, dec
 	return interceptor(ctx, in, info, handler)
 }
 
+func _SlackActions_UpcomingCooks_Handler(srv interface{}, ctx context.Context, dec func(interface{}) error, interceptor grpc.UnaryServerInterceptor) (interface{}, error) {
+	in := new(UpcomingCooksRequest)
+	if err := dec(in); err != nil {
+		return nil, err
+	}
+	if interceptor == nil {
+		return srv.(SlackActionsServer).UpcomingCooks(ctx, in)
+	}
+	info := &grpc.UnaryServerInfo{
+		Server:     srv,
+		FullMethod: "/pb.SlackActions/UpcomingCooks",
+	}
+	handler := func(ctx context.Context, req interface{}) (interface{}, error) {
+		return srv.(SlackActionsServer).UpcomingCooks(ctx, req.(*UpcomingCooksRequest))
+	}
+	return interceptor(ctx, in, info, handler)
+}
+
 // SlackActions_ServiceDesc is the grpc.ServiceDesc for SlackActions service.
 // It's only intended for direct use with grpc.RegisterService,
 // and not to be introspected or modified (even as a copy)
@@ -264,6 +296,10 @@ var SlackActions_ServiceDesc = grpc.ServiceDesc{
 		{
 			MethodName: "AssignCooks",
 			Handler:    _SlackActions_AssignCooks_Handler,
+		},
+		{
+			MethodName: "UpcomingCooks",
+			Handler:    _SlackActions_UpcomingCooks_Handler,
 		},
 	},
 	Streams: []grpc.StreamDesc{
