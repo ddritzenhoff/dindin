@@ -36,7 +36,7 @@ var cmdMembers = &cobra.Command{
 			if err != nil {
 				log.Fatalf("client.GetMembers failed: %v", err)
 			}
-			log.Printf("Real Name: %s\nDisplay Name: %s\nSlackUID: %s\n\n", memberInfo.GetRealName(), memberInfo.GetDisplayName(), memberInfo.GetSlackUID())
+			log.Printf("Real Name: %s\nDisplay Name: %s\nSlackUID: %s\n\n", memberInfo.GetRealName(), memberInfo.GetDisplayName(), memberInfo.GetSlack_UID())
 		}
 	},
 }

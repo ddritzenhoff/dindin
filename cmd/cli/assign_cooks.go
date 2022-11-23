@@ -38,10 +38,10 @@ func getDayDifference(now time.Weekday, then time.Weekday) int {
 func buildCookingDay(now time.Time, then time.Weekday, slackUID string) *pb.Cooking {
 	year, month, day := now.AddDate(0, 0, getDayDifference(now.Weekday(), then)).Date()
 	return &pb.Cooking{
-		Day:      int32(day),
-		Month:    int32(month),
-		Year:     int32(year),
-		SlackUID: slackUID,
+		Day:       int32(day),
+		Month:     int32(month),
+		Year:      int32(year),
+		Slack_UID: slackUID,
 	}
 }
 
