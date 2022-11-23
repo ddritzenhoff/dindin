@@ -1,5 +1,5 @@
 config.yaml
 .DS_Store
-cli
+/cmd/cli/cli
 server
 dindin.db
