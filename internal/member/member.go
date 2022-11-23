@@ -52,6 +52,10 @@ func (s *Service) LikedMessage(slackUID string) error {
 	return nil
 }
 
+func (s *Service) GetMember(slackUID string) (*Member, error) {
+	return s.repository.getBySlackUID(slackUID)
+}
+
 func (s *Service) GetMemberOrCreate(slackUID string) (*Member, error) {
 	m, err := s.repository.getBySlackUID(slackUID)
 	if err != nil {
@@ -147,7 +151,7 @@ func (s *Service) ReactionRemovedEvent(e *slackevents.ReactionRemovedEvent) erro
 	return nil
 }
 
-func (s *Service) GetAllMembers() ([]Member, error) {
+func (s *Service) AllMembers() ([]Member, error) {
 	members, err := s.repository.getAll()
 	if err != nil {
 		return nil, fmt.Errorf("GetAllMembers: %w", err)
@@ -208,7 +212,7 @@ func mealsEatenToMealsCooked(mealsEaten uint, mealsCooked uint) float32 {
 }
 
 func (s *Service) WeeklyUpdate() error {
-	members, err := s.GetAllMembers()
+	members, err := s.AllMembers()
 	if err != nil {
 		return fmt.Errorf("WeeklyUpdate GetAllMembers: %w", err)
 	}
