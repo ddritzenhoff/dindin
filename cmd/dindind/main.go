@@ -1,27 +1,41 @@
 package main
 
 import (
+	"context"
+	"database/sql"
+	_ "embed"
 	"fmt"
 	"log"
 	"net"
 	"os"
 
-	"database/sql"
-
-	"github.com/ddritzenhoff/dindin/internal/configs"
-	"github.com/ddritzenhoff/dindin/internal/cooking"
-	"github.com/ddritzenhoff/dindin/internal/http/rest"
-	"github.com/ddritzenhoff/dindin/internal/http/rpc"
-	"github.com/ddritzenhoff/dindin/internal/http/rpc/pb"
-	"github.com/ddritzenhoff/dindin/internal/member"
+	"github.com/ddritzenhoff/dindin/configs"
+	"github.com/ddritzenhoff/dindin/http/rest"
+	"github.com/ddritzenhoff/dindin/http/rpc"
+	"github.com/ddritzenhoff/dindin/http/rpc/pb"
+	"github.com/ddritzenhoff/dindin/slack"
+	"github.com/ddritzenhoff/dindin/sqlite"
+	"github.com/ddritzenhoff/dindin/sqlite/gen"
 	_ "github.com/mattn/go-sqlite3"
 	"google.golang.org/grpc"
 )
 
 func main() {
+	if err := run(); err != nil {
+		log.Fatal(err)
+	}
+}
+
+// run initializes the member, meal, and Slack services and starts the REST and GRPC servers.
+func run() error {
 	logger := log.New(os.Stdout, "DEBUG: ", log.LstdFlags)
 
 	cfg, err := configs.NewConfigService()
+	if err != nil {
+		log.Fatal(err)
+	}
+
+	slackConfig, err := cfg.Slack()
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -37,26 +51,26 @@ func main() {
 	}
 	defer db.Close()
 
-	slackConfig, err := cfg.SlackConfig()
-	if err != nil {
-		log.Fatal(err)
-	}
-	ces, err := cooking.NewService(db, slackConfig)
+	// create tables
+	_, err = db.ExecContext(context.Background(), sqlite.Schema)
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	ms, err := member.NewService(db, ces, slackConfig)
-	if err != nil {
-		log.Fatal(err)
-	}
+	queries := gen.New(db)
+
+	mealService := sqlite.NewMealService(queries, db)
+
+	memberService := sqlite.NewMemberService(queries, db)
+
+	slackService := slack.NewService(slackConfig, mealService, memberService)
 
 	restCfg, err := cfg.REST()
 	if err != nil {
 		log.Fatal(err)
 	}
 
-	h, err := rest.NewRESTService(logger, restCfg, ms)
+	h, err := rest.NewServer(logger, restCfg, memberService, slackService)
 	if err != nil {
 		log.Fatal(err)
 	}
@@ -72,7 +86,7 @@ func main() {
 		log.Fatalf("failed to listen: %v", err)
 	}
 	// create a http instance
-	s := rpc.NewServer(ces, ms, slackConfig)
+	s := rpc.NewServer(mealService, memberService, slackService)
 	// create a gRPC http object
 	grpcServer := grpc.NewServer()
 	// attach the Ping service to the http
@@ -82,4 +96,5 @@ func main() {
 	if err := grpcServer.Serve(lis); err != nil {
 		log.Fatalf("failed to serve: %s", err)
 	}
+	return nil
 }
