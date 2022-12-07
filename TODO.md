@@ -1,10 +1,15 @@
 **TODO**
 
-- [x] Add logging in handler functions
+- [X] Add logging in handler functions
 - [ ] Write tests for db operations
 - [ ] Dockerize
-- [x] Assign next week cooks
-- [x] Get upcoming cooks
-- [x] Weekly update
-- [x] Implement error wrapping
-- [ ] Find a way to combine model and db-model into one. Right now, a change to the member model, for example, requires a corresponding change in almost all of the repository methods.
+- [X] CMD to assign cooks
+- [X] CMD to get upcoming cooks
+- [X] CMD to publish member meals eaten to meals cooked ratios in slack
+- [X] Implement error wrapping
+- [X] Finish documentation
+- [ ] Migrate off of Cobra and Viper to go back to the standard library
+- [ ] Add migration capabilities to the database
+- [ ] Upgrade to version 1.19
+- [ ] Change name to Dinny
+- [ ] Change the way the config file is passed in
