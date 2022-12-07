@@ -5,17 +5,18 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/ddritzenhoff/dindin/internal/http/rpc/pb"
+	"github.com/ddritzenhoff/dindin/http/rpc/pb"
 	"github.com/spf13/cobra"
 )
 
 func init() {
-	rootCmd.AddCommand(cmdEatingTomorrow)
+	rootCmd.AddCommand(weeklyUpdate)
 }
 
-var cmdEatingTomorrow = &cobra.Command{
-	Use:   "eating_tomorrow",
-	Short: "send a 'like to eat tomorrow' slack message if a user is set to cook tomorrow",
+// weeklyUpdate publishes a weekly update message into slack.
+var weeklyUpdate = &cobra.Command{
+	Use:   "weekly_update",
+	Short: "publish a weekly update message into slack",
 	Args:  cobra.NoArgs,
 	Run: func(cmd *cobra.Command, args []string) {
 		conn, err := generateGRPCClientConnection()
@@ -24,7 +25,7 @@ var cmdEatingTomorrow = &cobra.Command{
 		}
 		defer conn.Close()
 		slackClient := pb.NewSlackActionsClient(conn)
-		_, err = slackClient.EatingTomorrow(context.Background(), &pb.EmptyMessage{})
+		_, err = slackClient.WeeklyUpdate(context.Background(), &pb.EmptyMessage{})
 		if err != nil {
 			log.Fatal(err)
 		}

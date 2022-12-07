@@ -5,7 +5,7 @@ import (
 	"io"
 	"log"
 
-	"github.com/ddritzenhoff/dindin/internal/http/rpc/pb"
+	"github.com/ddritzenhoff/dindin/http/rpc/pb"
 	"github.com/spf13/cobra"
 )
 
@@ -13,6 +13,7 @@ func init() {
 	rootCmd.AddCommand(cmdMembers)
 }
 
+// cmdMembers gets the current members of dinner rotation from the database.
 var cmdMembers = &cobra.Command{
 	Use:   "members",
 	Short: "get the members of dinner rotation in [first name, last name | realName | displayName | SlackUID] order",
@@ -36,7 +37,7 @@ var cmdMembers = &cobra.Command{
 			if err != nil {
 				log.Fatalf("client.GetMembers failed: %v", err)
 			}
-			log.Printf("Real Name: %s\nDisplay Name: %s\nSlackUID: %s\n\n", memberInfo.GetRealName(), memberInfo.GetDisplayName(), memberInfo.GetSlack_UID())
+			log.Printf("Full Name: %s\nSlackUID: %s\n\n", memberInfo.GetFullName(), memberInfo.GetSlack_UID())
 		}
 	},
 }

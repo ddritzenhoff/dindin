@@ -7,6 +7,7 @@ import (
 	"github.com/spf13/cobra"
 )
 
+// rootCmd represents a CLI to interact with and get information about the dinner rotation bot.
 var rootCmd = &cobra.Command{
 	Use:   "dindin",
 	Short: "dindin is a slack bot to automate dinner rotation",

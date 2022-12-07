@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/ddritzenhoff/dindin/internal/http/rpc/pb"
+	"github.com/ddritzenhoff/dindin/http/rpc/pb"
 	"github.com/spf13/cobra"
 )
 
@@ -13,6 +13,7 @@ func init() {
 	rootCmd.AddCommand(cmdPing)
 }
 
+// cmdPing pings the dinner rotation bot server to see if it's active.
 var cmdPing = &cobra.Command{
 	Use:   "ping",
 	Short: "ping the server to check to see if it's working",

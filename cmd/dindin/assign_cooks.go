@@ -6,7 +6,7 @@ import (
 	"log"
 	"time"
 
-	"github.com/ddritzenhoff/dindin/internal/http/rpc/pb"
+	"github.com/ddritzenhoff/dindin/http/rpc/pb"
 	"github.com/spf13/cobra"
 )
 
@@ -35,16 +35,20 @@ func getDayDifference(now time.Weekday, then time.Weekday) int {
 	return (int(then) - int(now) + 7) % 7
 }
 
-func buildCookingDay(now time.Time, then time.Weekday, slackUID string) *pb.Cooking {
+// buildCookAssignment creates a pb.CookAssignment.
+func buildCookAssignment(now time.Time, then time.Weekday, slackUID string) *pb.CookAssignment {
 	year, month, day := now.AddDate(0, 0, getDayDifference(now.Weekday(), then)).Date()
-	return &pb.Cooking{
-		Day:       int32(day),
-		Month:     int32(month),
-		Year:      int32(year),
+	return &pb.CookAssignment{
+		Date: &pb.Date{
+			Year:  int64(year),
+			Month: int64(month),
+			Day:   int64(day),
+		},
 		Slack_UID: slackUID,
 	}
 }
 
+// assignCooks assigns cooks for the next week.
 var assignCooks = &cobra.Command{
 	Use:   "assign_cooks",
 	Short: "assign the cooks for the next week of dinner rotation",
@@ -58,37 +62,37 @@ var assignCooks = &cobra.Command{
 		defer conn.Close()
 
 		now := time.Now()
-		var cookings []*pb.Cooking
+		var assignments []*pb.CookAssignment
 
 		if sundaySlackUID != "" {
-			cookings = append(cookings, buildCookingDay(now, time.Sunday, sundaySlackUID))
+			assignments = append(assignments, buildCookAssignment(now, time.Sunday, sundaySlackUID))
 		}
 		if mondaySlackUID != "" {
-			cookings = append(cookings, buildCookingDay(now, time.Monday, mondaySlackUID))
+			assignments = append(assignments, buildCookAssignment(now, time.Monday, mondaySlackUID))
 		}
 		if tuesdaySlackUID != "" {
-			cookings = append(cookings, buildCookingDay(now, time.Tuesday, tuesdaySlackUID))
+			assignments = append(assignments, buildCookAssignment(now, time.Tuesday, tuesdaySlackUID))
 		}
 		if wednesdaySlackUID != "" {
-			cookings = append(cookings, buildCookingDay(now, time.Wednesday, wednesdaySlackUID))
+			assignments = append(assignments, buildCookAssignment(now, time.Wednesday, wednesdaySlackUID))
 		}
 		if thursdaySlackUID != "" {
-			cookings = append(cookings, buildCookingDay(now, time.Thursday, thursdaySlackUID))
+			assignments = append(assignments, buildCookAssignment(now, time.Thursday, thursdaySlackUID))
 		}
 		if fridaySlackUID != "" {
-			cookings = append(cookings, buildCookingDay(now, time.Friday, fridaySlackUID))
+			assignments = append(assignments, buildCookAssignment(now, time.Friday, fridaySlackUID))
 		}
 		if saturdaySlackUID != "" {
-			cookings = append(cookings, buildCookingDay(now, time.Saturday, saturdaySlackUID))
+			assignments = append(assignments, buildCookAssignment(now, time.Saturday, saturdaySlackUID))
 		}
 
-		if len(cookings) == 0 {
+		if len(assignments) == 0 {
 			fmt.Println("didn't specify any days, so nothing happened..")
 			return
 		}
 
 		slackActionsClient := pb.NewSlackActionsClient(conn)
-		_, err = slackActionsClient.AssignCooks(context.Background(), &pb.AssignCooksRequest{Cookings: cookings})
+		_, err = slackActionsClient.AssignCooks(context.Background(), &pb.AssignCooksRequest{Assignments: assignments})
 		if err != nil {
 			log.Fatal(err)
 		}

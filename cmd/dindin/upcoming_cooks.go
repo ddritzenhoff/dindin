@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/ddritzenhoff/dindin/internal/http/rpc/pb"
+	"github.com/ddritzenhoff/dindin/http/rpc/pb"
 	"github.com/spf13/cobra"
 )
 
@@ -16,6 +16,7 @@ func init() {
 	daysWanted = upcomingCooks.Flags().Int64P("days", "d", 1, "get the number cooking events wanted")
 }
 
+// upcomingCooks gets the cooks who are in charge of the meals over the next few days.
 var upcomingCooks = &cobra.Command{
 	Use:   "upcoming_cooks",
 	Short: "get the upcoming cooks",
@@ -31,9 +32,8 @@ var upcomingCooks = &cobra.Command{
 		if err != nil {
 			log.Fatal(err)
 		}
-		for _, c := range r.Cooks {
-			fmt.Printf("Name: %s\n\tSlackUID: %s,\n\tCooking Time: %d,\n\tDesc: %s,\n\tMessageID: %s,", c.FirstName+" "+c.LastName, c.ChefSlack_UID, c.CookingTime, c.MealDescription, c.SlackMessage_ID)
-			fmt.Printf("%#v\n", c)
+		for _, m := range r.Meals {
+			fmt.Printf("Name: %s\n\tSlackUID: %s,\n\tCooking Time: %s,\n\tDesc: %s,\n\tMessageID: %s,", m.FullName, m.CookSlack_UID, fmt.Sprintf("%d/%d/%d\n\t", m.Date.Month, m.Date.Day, m.Date.Year), m.Description, m.SlackMessage_ID)
 		}
 	},
 }

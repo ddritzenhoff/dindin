@@ -4,11 +4,12 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/ddritzenhoff/dindin/internal/configs"
+	"github.com/ddritzenhoff/dindin/configs"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
+// generateGRPCClientConnection generates the initial connection between client and server.
 func generateGRPCClientConnection() (*grpc.ClientConn, error) {
 	cfg, err := configs.NewConfigService()
 	if err != nil {

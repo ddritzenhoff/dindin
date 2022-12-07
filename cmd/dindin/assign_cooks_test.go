@@ -5,6 +5,7 @@ import (
 	"time"
 )
 
+// TestGetDayDifference ensures  getDayDifference(now=Monday, then=Monday) --> 0 and getDayDifference(now=Wednesday, then=Tuesday) --> 6
 func TestGetDayDifference(t *testing.T) {
 	type args struct {
 		now  time.Weekday
