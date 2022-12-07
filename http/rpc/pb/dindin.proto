@@ -7,22 +7,23 @@ message PingResponse {
 }
 
 message GetMembersResponse {
-  string first_name = 1;
-  string last_name = 2;
-  string real_name = 3;
-  string display_name = 4;
-  string slack_UID = 5;
+  string full_name = 1;
+  string slack_UID = 2;
 }
 
-message Cooking {
-  int32 day = 1;
-  int32 month = 2;
-  int32 year = 3;
-  string slack_UID = 4;
+message Date {
+  int64 year = 1;
+  int64 month = 2;
+  int64 day = 3;
+}
+
+message CookAssignment {
+  Date date = 1;
+  string slack_UID = 2;
 }
 
 message AssignCooksRequest {
-  repeated Cooking Cookings = 1;
+  repeated CookAssignment assignments = 1;
 }
 
 message EmptyMessage {}
@@ -31,17 +32,16 @@ message UpcomingCooksRequest {
   int64 days_wanted = 1;
 }
 
-message Cook {
-  int64 cooking_time = 1;
-	string chef_slack_UID = 2;
-	string meal_description = 3;
+message Meal {
+  Date date = 1;
+	string cook_slack_UID = 2;
+	string description = 3;
 	string slack_message_ID = 4;
-  string first_name = 5;
-  string last_name = 6;
+  string full_name = 5;
 }
 
 message UpcomingCooksResponse {
-  repeated Cook Cooks = 1;
+  repeated Meal Meals = 1;
 }
 
 service SlackActions {
