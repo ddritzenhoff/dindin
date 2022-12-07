@@ -10,6 +10,6 @@
 - [X] Finish documentation
 - [ ] Migrate off of Cobra and Viper to go back to the standard library
 - [ ] Add migration capabilities to the database
-- [ ] Upgrade to version 1.19
+- [X] Upgrade to version 1.19
 - [ ] Change name to Dinny
 - [ ] Change the way the config file is passed in
