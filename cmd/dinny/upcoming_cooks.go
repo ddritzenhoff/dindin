@@ -5,7 +5,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/ddritzenhoff/dindin/http/rpc/pb"
+	"github.com/ddritzenhoff/dinny/http/rpc/pb"
 	"github.com/spf13/cobra"
 )
 

@@ -4,7 +4,7 @@ import (
 	"errors"
 	"fmt"
 
-	"github.com/ddritzenhoff/dindin"
+	"github.com/ddritzenhoff/dinny"
 	"github.com/slack-go/slack/slackevents"
 )
 
@@ -30,12 +30,12 @@ func (s *Service) ReactionAddedEvent(e *slackevents.ReactionAddedEvent) error {
 	// add the member if he doesn't exist yet
 	slackUID := e.User
 	member, err := s.memberService.FindMemberBySlackUID(slackUID)
-	if errors.Is(err, dindin.ErrNotFound) {
+	if errors.Is(err, dinny.ErrNotFound) {
 		userInfo, err := s.client.GetUserInfo(slackUID)
 		if err != nil {
 			return fmt.Errorf("ReactionAddedEvent GetUserInfo: %w", err)
 		}
-		err = s.memberService.CreateMember(&dindin.Member{
+		err = s.memberService.CreateMember(&dinny.Member{
 			SlackUID: slackUID,
 			FullName: userInfo.RealName,
 		})
@@ -48,7 +48,7 @@ func (s *Service) ReactionAddedEvent(e *slackevents.ReactionAddedEvent) error {
 
 	// update the member's meals eaten
 	newMealsEaten := member.MealsEaten + 1
-	err = s.memberService.UpdateMember(member.ID, dindin.MemberUpdate{
+	err = s.memberService.UpdateMember(member.ID, dinny.MemberUpdate{
 		MealsEaten: &newMealsEaten,
 	})
 	if err != nil {
@@ -79,12 +79,12 @@ func (s *Service) ReactionRemovedEvent(e *slackevents.ReactionRemovedEvent) erro
 	// add the member if he doesn't exist yet
 	slackUID := e.User
 	member, err := s.memberService.FindMemberBySlackUID(slackUID)
-	if errors.Is(err, dindin.ErrNotFound) {
+	if errors.Is(err, dinny.ErrNotFound) {
 		userInfo, err := s.client.GetUserInfo(slackUID)
 		if err != nil {
 			return fmt.Errorf("ReactionRemovedEvent GetUserInfo: %w", err)
 		}
-		err = s.memberService.CreateMember(&dindin.Member{
+		err = s.memberService.CreateMember(&dinny.Member{
 			SlackUID: slackUID,
 			FullName: userInfo.RealName,
 		})
@@ -101,7 +101,7 @@ func (s *Service) ReactionRemovedEvent(e *slackevents.ReactionRemovedEvent) erro
 	if newMealsEaten < 0 {
 		newMealsEaten = 0
 	}
-	err = s.memberService.UpdateMember(member.ID, dindin.MemberUpdate{
+	err = s.memberService.UpdateMember(member.ID, dinny.MemberUpdate{
 		MealsEaten: &newMealsEaten,
 	})
 	if err != nil {

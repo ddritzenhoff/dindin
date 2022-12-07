@@ -1,4 +1,4 @@
-package dindin
+package dinny
 
 // Member represents a member of dinner rotation.
 type Member struct {

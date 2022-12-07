@@ -4,7 +4,7 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/ddritzenhoff/dindin/configs"
+	"github.com/ddritzenhoff/dinny/configs"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )

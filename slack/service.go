@@ -7,7 +7,7 @@ import (
 	"sort"
 	"time"
 
-	"github.com/ddritzenhoff/dindin"
+	"github.com/ddritzenhoff/dinny"
 	"github.com/slack-go/slack"
 )
 
@@ -21,12 +21,12 @@ type Config struct {
 type Service struct {
 	client        *slack.Client
 	config        *Config
-	mealService   dindin.MealService
-	memberService dindin.MemberService
+	mealService   dinny.MealService
+	memberService dinny.MemberService
 }
 
 // NewService returns a new instance of slack.Service.
-func NewService(config *Config, mealService dindin.MealService, memberService dindin.MemberService) *Service {
+func NewService(config *Config, mealService dinny.MealService, memberService dinny.MemberService) *Service {
 	client := slack.New(config.BotSigningKey)
 	if client == nil {
 		log.Fatal("NewService slack.New")
@@ -53,7 +53,7 @@ func isEatingTomorrowBlock() slack.MsgOption {
 // PostEatingTomorrow sends the 'who's eating' messages into the slack channel.
 func (s *Service) PostEatingTomorrow() error {
 	year, month, day := time.Now().AddDate(0, 0, 1).Date()
-	meal, err := s.mealService.FindMealByDate(dindin.Date{Year: year, Month: month, Day: day})
+	meal, err := s.mealService.FindMealByDate(dinny.Date{Year: year, Month: month, Day: day})
 	if err != nil {
 		return fmt.Errorf("PostEatingTomorrow FindMealByDate: %w", err)
 	}
@@ -64,7 +64,7 @@ func (s *Service) PostEatingTomorrow() error {
 	if err != nil {
 		return fmt.Errorf("PostEatingTomorrow PostMessage: %w", err)
 	}
-	err = s.mealService.UpdateMeal(meal.ID, dindin.MealUpdate{SlackMessageID: &respTimestamp})
+	err = s.mealService.UpdateMeal(meal.ID, dinny.MealUpdate{SlackMessageID: &respTimestamp})
 	if err != nil {
 		return fmt.Errorf("PostEatingTomorrow UpdateMeal: %w", err)
 	}
@@ -98,7 +98,7 @@ func ratioStatus(mealsEaten int64, mealsCooked int64) string {
 }
 
 // weeklyUpdateBlock represents a slack message to give meals eaten to meals cooked ratio statuses.
-func weeklyUpdateBlock(members []*dindin.Member) slack.MsgOption {
+func weeklyUpdateBlock(members []*dinny.Member) slack.MsgOption {
 
 	var sectionBlocks []slack.Block
 	// Header Section

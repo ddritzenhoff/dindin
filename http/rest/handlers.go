@@ -6,20 +6,20 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/ddritzenhoff/dindin"
-	"github.com/ddritzenhoff/dindin/slack"
+	"github.com/ddritzenhoff/dinny"
+	"github.com/ddritzenhoff/dinny/slack"
 	"github.com/slack-go/slack/slackevents"
 )
 
 // Handlers represents the handler to an HTTP server.
 type Handlers struct {
 	logger        *log.Logger
-	memberService dindin.MemberService
+	memberService dinny.MemberService
 	slackService  *slack.Service
 }
 
 // NewHandlers creates a new Handlers instance.
-func NewHandlers(logger *log.Logger, memberService dindin.MemberService, slackService *slack.Service) *Handlers {
+func NewHandlers(logger *log.Logger, memberService dinny.MemberService, slackService *slack.Service) *Handlers {
 	return &Handlers{
 		logger:        logger,
 		memberService: memberService,

@@ -6,12 +6,12 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ddritzenhoff/dindin"
-	"github.com/ddritzenhoff/dindin/sqlite/gen"
+	"github.com/ddritzenhoff/dinny"
+	"github.com/ddritzenhoff/dinny/sqlite/gen"
 )
 
 // Ensure service implements interface.
-var _ dindin.MealService = (*MealService)(nil)
+var _ dinny.MealService = (*MealService)(nil)
 
 // MemberService represents a service for managing members.
 type MealService struct {
@@ -24,8 +24,8 @@ func NewMealService(query *gen.Queries, db *sql.DB) *MealService {
 	return &MealService{query, db}
 }
 
-// toDindinMeal converts a gen.Meal to a dindin.Meal
-func toDindinMeal(m gen.Meal) *dindin.Meal {
+// toDindinMeal converts a gen.Meal to a dinny.Meal
+func toDindinMeal(m gen.Meal) *dinny.Meal {
 	var desc string
 	var smid string
 	if m.Description.Valid {
@@ -39,10 +39,10 @@ func toDindinMeal(m gen.Meal) *dindin.Meal {
 		smid = ""
 	}
 
-	return &dindin.Meal{
+	return &dinny.Meal{
 		ID:           m.ID,
 		CookSlackUID: m.CookSlackUid,
-		Date: dindin.Date{
+		Date: dinny.Date{
 			Year:  int(m.Year),
 			Month: time.Month(m.Month),
 			Day:   int(m.Day),
@@ -54,11 +54,11 @@ func toDindinMeal(m gen.Meal) *dindin.Meal {
 
 // FindMealByID retrieves a meal by ID.
 // Returns ErrNotFound if meal does not exist.
-func (ms *MealService) FindMealByID(id int64) (*dindin.Meal, error) {
+func (ms *MealService) FindMealByID(id int64) (*dinny.Meal, error) {
 	m, err := ms.query.FindMealByID(context.Background(), id)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, dindin.ErrNotFound
+			return nil, dinny.ErrNotFound
 		} else {
 			return nil, fmt.Errorf("FindMealByID: %w", err)
 		}
@@ -68,7 +68,7 @@ func (ms *MealService) FindMealByID(id int64) (*dindin.Meal, error) {
 
 // FindMealByDate retrieves a meal by Date.
 // Returns ErrNotFound if meal does not exist.
-func (ms *MealService) FindMealByDate(date dindin.Date) (*dindin.Meal, error) {
+func (ms *MealService) FindMealByDate(date dinny.Date) (*dinny.Meal, error) {
 	params := gen.FindMealByDateParams{
 		Year:  int64(date.Year),
 		Month: int64(date.Month),
@@ -77,7 +77,7 @@ func (ms *MealService) FindMealByDate(date dindin.Date) (*dindin.Meal, error) {
 	m, err := ms.query.FindMealByDate(context.Background(), params)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, dindin.ErrNotFound
+			return nil, dinny.ErrNotFound
 		} else {
 			return nil, fmt.Errorf("FindMealByDate: %w", err)
 		}
@@ -87,7 +87,7 @@ func (ms *MealService) FindMealByDate(date dindin.Date) (*dindin.Meal, error) {
 
 // FindMealBySlackMessageID retrieves a meal by SlackMessageID.
 // Returns ErrNotFound if meal does not exist.
-func (ms *MealService) FindMealBySlackMessageID(slackMessageID string) (*dindin.Meal, error) {
+func (ms *MealService) FindMealBySlackMessageID(slackMessageID string) (*dinny.Meal, error) {
 	param := sql.NullString{
 		String: slackMessageID,
 		Valid:  true,
@@ -95,7 +95,7 @@ func (ms *MealService) FindMealBySlackMessageID(slackMessageID string) (*dindin.
 	m, err := ms.query.FindMealBySlackMessageID(context.Background(), param)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, dindin.ErrNotFound
+			return nil, dinny.ErrNotFound
 		} else {
 			return nil, fmt.Errorf("FindMealBySlackMessageID: %w", err)
 		}
@@ -104,7 +104,7 @@ func (ms *MealService) FindMealBySlackMessageID(slackMessageID string) (*dindin.
 }
 
 // CreateMeal creates a new meal.
-func (ms *MealService) CreateMeal(m *dindin.Meal) error {
+func (ms *MealService) CreateMeal(m *dinny.Meal) error {
 	arg := gen.CreateMealParams{
 		CookSlackUid: m.CookSlackUID,
 		Year:         int64(m.Date.Year),
@@ -119,7 +119,7 @@ func (ms *MealService) CreateMeal(m *dindin.Meal) error {
 }
 
 // UpdateMeal updates a meal object.
-func (ms *MealService) UpdateMeal(id int64, upd dindin.MealUpdate) error {
+func (ms *MealService) UpdateMeal(id int64, upd dinny.MealUpdate) error {
 	tx, err := ms.db.Begin()
 	if err != nil {
 		return fmt.Errorf("UpdateMember db.Begin: %w", err)

@@ -1,4 +1,4 @@
-module github.com/ddritzenhoff/dindin
+module github.com/ddritzenhoff/dinny
 
 go 1.19
 

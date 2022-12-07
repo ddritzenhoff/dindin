@@ -6,9 +6,9 @@ import (
 	"fmt"
 	"time"
 
-	"github.com/ddritzenhoff/dindin"
-	"github.com/ddritzenhoff/dindin/http/rpc/pb"
-	"github.com/ddritzenhoff/dindin/slack"
+	"github.com/ddritzenhoff/dinny"
+	"github.com/ddritzenhoff/dinny/http/rpc/pb"
+	"github.com/ddritzenhoff/dinny/slack"
 )
 
 // Config represents the values needed for a gRPC server.
@@ -19,14 +19,14 @@ type Config struct {
 
 // Server represents the gRPC server.
 type Server struct {
-	mealService   dindin.MealService
-	memberService dindin.MemberService
+	mealService   dinny.MealService
+	memberService dinny.MemberService
 	slackService  *slack.Service
 	pb.UnimplementedSlackActionsServer
 }
 
 // NewServer creates a new gRPC server instance.
-func NewServer(es dindin.MealService, ms dindin.MemberService, slackService *slack.Service) Server {
+func NewServer(es dinny.MealService, ms dinny.MemberService, slackService *slack.Service) Server {
 	return Server{mealService: es, memberService: ms, slackService: slackService}
 }
 
@@ -73,21 +73,21 @@ func (s *Server) WeeklyUpdate(_ context.Context, in *pb.EmptyMessage) (*pb.Empty
 func (s *Server) AssignCooks(_ context.Context, acr *pb.AssignCooksRequest) (*pb.EmptyMessage, error) {
 	assignments := acr.GetAssignments()
 	for ii, assignment := range assignments {
-		d := dindin.Date{
+		d := dinny.Date{
 			Year:  int(assignment.Date.Year),
 			Month: time.Month(assignment.Date.Month),
 			Day:   int(assignment.Date.Day),
 		}
 		m, err := s.mealService.FindMealByDate(d)
-		if errors.Is(err, dindin.ErrNotFound) {
-			s.mealService.CreateMeal(&dindin.Meal{
+		if errors.Is(err, dinny.ErrNotFound) {
+			s.mealService.CreateMeal(&dinny.Meal{
 				CookSlackUID: assignment.Slack_UID,
 				Date:         d,
 			})
 		} else if err != nil {
 			return &pb.EmptyMessage{}, fmt.Errorf("AssignCooks FindMealByDate %d: %w", ii, err)
 		} else {
-			err := s.mealService.UpdateMeal(m.ID, dindin.MealUpdate{
+			err := s.mealService.UpdateMeal(m.ID, dinny.MealUpdate{
 				ChefSlackUID: &assignment.Slack_UID,
 			})
 			if err != nil {
@@ -103,7 +103,7 @@ func (s *Server) UpcomingCooks(_ context.Context, in *pb.UpcomingCooksRequest) (
 	year, month, day := time.Now().Date()
 	var meals []*pb.Meal
 	for ii := 0; ii < int(in.DaysWanted); ii++ {
-		d, _ := s.mealService.FindMealByDate(dindin.Date{Year: year, Month: month, Day: day + ii})
+		d, _ := s.mealService.FindMealByDate(dinny.Date{Year: year, Month: month, Day: day + ii})
 		if d == nil {
 			continue
 		}

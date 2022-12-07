@@ -1,4 +1,4 @@
-package dindin
+package dinny
 
 import (
 	"errors"

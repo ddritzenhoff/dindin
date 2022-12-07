@@ -5,12 +5,12 @@ import (
 	"database/sql"
 	"fmt"
 
-	"github.com/ddritzenhoff/dindin"
-	"github.com/ddritzenhoff/dindin/sqlite/gen"
+	"github.com/ddritzenhoff/dinny"
+	"github.com/ddritzenhoff/dinny/sqlite/gen"
 )
 
 // Ensure service implements interface.
-var _ dindin.MemberService = (*MemberService)(nil)
+var _ dinny.MemberService = (*MemberService)(nil)
 
 // MemberService represents a service for managing members.
 type MemberService struct {
@@ -25,17 +25,17 @@ func NewMemberService(query *gen.Queries, db *sql.DB) *MemberService {
 
 // Retrieves a member by ID
 // Returns ErrNotFound if meal does not exist.
-func (ms *MemberService) FindMemberByID(id int64) (*dindin.Member, error) {
+func (ms *MemberService) FindMemberByID(id int64) (*dinny.Member, error) {
 	m, err := ms.query.FindMemberByID(context.Background(), id)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, dindin.ErrNotFound
+			return nil, dinny.ErrNotFound
 		} else {
 			return nil, fmt.Errorf("FindMemberByID: %w", err)
 		}
 	}
 	isLeader := m.Leader == 1
-	return &dindin.Member{
+	return &dinny.Member{
 		ID:          m.ID,
 		SlackUID:    m.SlackUid,
 		FullName:    m.FullName,
@@ -47,17 +47,17 @@ func (ms *MemberService) FindMemberByID(id int64) (*dindin.Member, error) {
 
 // Retrieves a member by SlackID
 // Returns ErrNotFound if meal does not exist.
-func (ms *MemberService) FindMemberBySlackUID(slackUID string) (*dindin.Member, error) {
+func (ms *MemberService) FindMemberBySlackUID(slackUID string) (*dinny.Member, error) {
 	m, err := ms.query.FindMemberBySlackUID(context.Background(), slackUID)
 	if err != nil {
 		if err == sql.ErrNoRows {
-			return nil, dindin.ErrNotFound
+			return nil, dinny.ErrNotFound
 		} else {
 			return nil, fmt.Errorf("FindMemberBySlackUID: %w", err)
 		}
 	}
 	isLeader := m.Leader == 1
-	return &dindin.Member{
+	return &dinny.Member{
 		ID:          m.ID,
 		SlackUID:    m.SlackUid,
 		FullName:    m.FullName,
@@ -68,16 +68,16 @@ func (ms *MemberService) FindMemberBySlackUID(slackUID string) (*dindin.Member, 
 }
 
 // Retrieves a list of members.
-func (ms *MemberService) ListMembers() ([]*dindin.Member, error) {
+func (ms *MemberService) ListMembers() ([]*dinny.Member, error) {
 	mems, err := ms.query.ListMembers(context.Background())
 	if err != nil {
 		return nil, fmt.Errorf("ListMembers: %w", err)
 	}
-	var members []*dindin.Member
+	var members []*dinny.Member
 	for ii := 0; ii < len(mems); ii++ {
 		m := &mems[ii]
 		isLeader := m.Leader == 1
-		members = append(members, &dindin.Member{
+		members = append(members, &dinny.Member{
 			ID:          m.ID,
 			SlackUID:    m.SlackUid,
 			FullName:    m.FullName,
@@ -90,7 +90,7 @@ func (ms *MemberService) ListMembers() ([]*dindin.Member, error) {
 }
 
 // Creates a new member.
-func (ms *MemberService) CreateMember(m *dindin.Member) error {
+func (ms *MemberService) CreateMember(m *dinny.Member) error {
 	var isLeader int64
 	if m.Leader {
 		isLeader = 1
@@ -110,7 +110,7 @@ func (ms *MemberService) CreateMember(m *dindin.Member) error {
 }
 
 // Updates a member object.
-func (ms *MemberService) UpdateMember(id int64, upd dindin.MemberUpdate) error {
+func (ms *MemberService) UpdateMember(id int64, upd dinny.MemberUpdate) error {
 	tx, err := ms.db.Begin()
 	if err != nil {
 		return fmt.Errorf("UpdateMember db.Begin: %w", err)

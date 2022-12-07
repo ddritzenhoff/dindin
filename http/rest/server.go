@@ -5,8 +5,8 @@ import (
 	"log"
 	"net/http"
 
-	"github.com/ddritzenhoff/dindin"
-	"github.com/ddritzenhoff/dindin/slack"
+	"github.com/ddritzenhoff/dinny"
+	"github.com/ddritzenhoff/dinny/slack"
 )
 
 // Config represents the values needed to start an HTTP server.
@@ -32,7 +32,7 @@ func (h *Server) Start() {
 }
 
 // NewServer creates a new HTTP server.
-func NewServer(logger *log.Logger, cfg *Config, memberService dindin.MemberService, slackService *slack.Service) (*Server, error) {
+func NewServer(logger *log.Logger, cfg *Config, memberService dinny.MemberService, slackService *slack.Service) (*Server, error) {
 	h := NewHandlers(logger, memberService, slackService)
 	httpServer := &http.Server{
 		Addr:    fmt.Sprintf("%s:%s", cfg.Host, cfg.Port),

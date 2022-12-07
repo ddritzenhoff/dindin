@@ -4,9 +4,9 @@ import (
 	"fmt"
 	"log"
 
-	"github.com/ddritzenhoff/dindin/http/rest"
-	"github.com/ddritzenhoff/dindin/http/rpc"
-	"github.com/ddritzenhoff/dindin/slack"
+	"github.com/ddritzenhoff/dinny/http/rest"
+	"github.com/ddritzenhoff/dinny/http/rpc"
+	"github.com/ddritzenhoff/dinny/slack"
 	"github.com/spf13/viper"
 )
 
@@ -79,7 +79,7 @@ func NewConfigService() (*Configs, error) {
 	// TODO: (ddritzenhoff) find a better way of loading the config. Maybe
 	// 	you can pass it in instead?
 	viper.AddConfigPath(".")
-	viper.AddConfigPath("$HOME/programming/dindin/configs/.")
+	viper.AddConfigPath("$HOME/programming/dinny/configs/.")
 	viper.AddConfigPath("$HOME/config/.")
 	viper.AddConfigPath("$HOME/.")
 	err := viper.ReadInConfig()
