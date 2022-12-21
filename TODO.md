@@ -8,8 +8,9 @@
 - [X] CMD to publish member meals eaten to meals cooked ratios in slack
 - [X] Implement error wrapping
 - [X] Finish documentation
-- [ ] Migrate off of Cobra and Viper to go back to the standard library
+- [X] Migrate off of Cobra and Viper to go back to the standard library
 - [ ] Add migration capabilities to the database
 - [X] Upgrade to version 1.19
-- [ ] Change name to Dinny
-- [ ] Change the way the config file is passed in
+- [X] Change name to Dinny
+- [X] Change the way the config file is passed in
+- [ ] Migrate off of grpc and move to http methods. This just makes everything a bit simpler.
