@@ -2,33 +2,50 @@ package main
 
 import (
 	"context"
+	"flag"
 	"fmt"
-	"log"
 
-	"github.com/ddritzenhoff/dinny/http/rpc/pb"
-	"github.com/spf13/cobra"
+	"github.com/ddritzenhoff/dinny/http/grpc/pb"
 )
 
-func init() {
-	rootCmd.AddCommand(cmdEatingTomorrow)
+// EatingTomorrowCommand is a command to send a 'who's eating tomorrow' message into Slack.
+type EatingTomorrowCommand struct {
+	ConfigPath string
 }
 
-// cmdEatingTomorrow sends a 'like to eat tomorrow' slack message if a user is set to cook tomorrow.
-var cmdEatingTomorrow = &cobra.Command{
-	Use:   "eating_tomorrow",
-	Short: "send a 'like to eat tomorrow' slack message if a user is set to cook tomorrow",
-	Args:  cobra.NoArgs,
-	Run: func(cmd *cobra.Command, args []string) {
-		conn, err := generateGRPCClientConnection()
-		if err != nil {
-			log.Fatal(err)
-		}
-		defer conn.Close()
-		slackClient := pb.NewSlackActionsClient(conn)
-		_, err = slackClient.EatingTomorrow(context.Background(), &pb.EmptyMessage{})
-		if err != nil {
-			log.Fatal(err)
-		}
-		fmt.Println("success")
-	},
+// Run executes the eating_tomorrow command.
+func (c *EatingTomorrowCommand) Run(ctx context.Context, args []string) error {
+	fs := flag.NewFlagSet("", flag.ContinueOnError)
+	attachConfigFlags(fs, &c.ConfigPath)
+	if err := fs.Parse(args); err != nil {
+		return fmt.Errorf("Run fs.Parse: %w", err)
+	}
+
+	// Load the configuration.
+	config, err := ReadConfigFile(c.ConfigPath)
+	if err != nil {
+		return fmt.Errorf("Run ReadConfigFile: %w", err)
+	}
+
+	conn, err := generateGRPCClientConnectionWithAddress(config.URL)
+	if err != nil {
+		return fmt.Errorf("Run generateGRPCClient: %w", err)
+	}
+	defer conn.Close()
+	slackClient := pb.NewSlackActionsClient(conn)
+	_, err = slackClient.EatingTomorrow(context.Background(), &pb.EmptyMessage{})
+	if err != nil {
+		return fmt.Errorf("Run slackClient.EatingTomorrow: %w", err)
+	}
+	return nil
+}
+
+// usage prints usage information for eating_tomorrow to STDOUT.
+func (c *EatingTomorrowCommand) usage() {
+	fmt.Println(`
+Send a 'like to eat tomorrow' slack message.
+
+Usage:
+        dinny eating_tomorrow
+`[1:])
 }

@@ -1,27 +1,13 @@
 package main
 
 import (
-	"fmt"
-	"log"
-
-	"github.com/ddritzenhoff/dinny/configs"
 	"google.golang.org/grpc"
 	"google.golang.org/grpc/credentials/insecure"
 )
 
-// generateGRPCClientConnection generates the initial connection between client and server.
-func generateGRPCClientConnection() (*grpc.ClientConn, error) {
-	cfg, err := configs.NewConfigService()
-	if err != nil {
-		log.Fatal(err)
-	}
-	grpcCfg, err := cfg.GRPC()
-	if err != nil {
-		log.Fatal(err)
-	}
-
+func generateGRPCClientConnectionWithAddress(serverAddress string) (*grpc.ClientConn, error) {
 	var opts []grpc.DialOption
 	opts = append(opts, grpc.WithTransportCredentials(insecure.NewCredentials()))
-	conn, err := grpc.Dial(fmt.Sprintf("%s:%s", grpcCfg.Host, grpcCfg.Port), opts...)
+	conn, err := grpc.Dial(serverAddress, opts...)
 	return conn, err
 }
