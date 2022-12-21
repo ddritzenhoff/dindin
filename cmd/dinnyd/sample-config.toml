@@ -1,0 +1,19 @@
+[http.rest]
+host = "localhost"
+port = 7777
+
+[http.grpc]
+host = "localhost"
+port = 7778
+
+[db]
+dsn = "dinny.db"
+
+# these are your slack configuration values. You can get these from slack api app homepage.
+[slack]
+botSigningKey = ""
+appID = ""
+clientID = ""
+clientSecret= ""
+signingSecret = ""
+channelID = ""
