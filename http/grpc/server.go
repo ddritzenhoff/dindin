@@ -1,24 +1,29 @@
-package rpc
+package grpc
 
 import (
 	"context"
 	"errors"
 	"fmt"
+	"log"
+	"net"
 	"time"
 
 	"github.com/ddritzenhoff/dinny"
-	"github.com/ddritzenhoff/dinny/http/rpc/pb"
+	"github.com/ddritzenhoff/dinny/http/grpc/pb"
 	"github.com/ddritzenhoff/dinny/slack"
+	"google.golang.org/grpc"
 )
 
 // Config represents the values needed for a gRPC server.
 type Config struct {
-	Host string
-	Port string
+	Host string `toml:"host"`
+	Port string `toml:"port"`
 }
 
 // Server represents the gRPC server.
 type Server struct {
+	logger        *log.Logger
+	Config        *Config
 	mealService   dinny.MealService
 	memberService dinny.MemberService
 	slackService  *slack.Service
@@ -26,8 +31,23 @@ type Server struct {
 }
 
 // NewServer creates a new gRPC server instance.
-func NewServer(es dinny.MealService, ms dinny.MemberService, slackService *slack.Service) Server {
-	return Server{mealService: es, memberService: ms, slackService: slackService}
+func NewServer(logger *log.Logger, cfg *Config, es dinny.MealService, ms dinny.MemberService, slackService *slack.Service) *Server {
+	return &Server{logger: logger, Config: cfg, mealService: es, memberService: ms, slackService: slackService}
+}
+
+func (s *Server) Start() error {
+	lis, err := net.Listen("tcp", fmt.Sprintf("%s:%s", s.Config.Host, s.Config.Port))
+	if err != nil {
+		return fmt.Errorf("Start net.Listen: %w", err)
+	}
+	grpcServer := grpc.NewServer()
+	// Register gRPC server methods.
+	pb.RegisterSlackActionsServer(grpcServer, s)
+	s.logger.Printf("gRPC server listening on host %s and port %s\n", s.Config.Host, s.Config.Port)
+	if err := grpcServer.Serve(lis); err != nil {
+		return fmt.Errorf("Start grpcServer.Serve: %w", err)
+	}
+	return nil
 }
 
 // Ping generates a response to indicate http is working.

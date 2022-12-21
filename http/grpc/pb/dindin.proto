@@ -1,5 +1,5 @@
 syntax = "proto3";
-option go_package = "github.com/ddritzenhoff/dindin/internal/http/rpc/pb";
+option go_package = "github.com/ddritzenhoff/dinny/http/grpc/pb";
 package pb;
 
 message PingResponse {
