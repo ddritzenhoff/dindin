@@ -2,7 +2,6 @@ package slack
 
 import (
 	"fmt"
-	"log"
 	"math"
 	"sort"
 	"time"
@@ -26,17 +25,17 @@ type Service struct {
 }
 
 // NewService returns a new instance of slack.Service.
-func NewService(config *Config, mealService dinny.MealService, memberService dinny.MemberService) *Service {
+func NewService(config *Config, mealService dinny.MealService, memberService dinny.MemberService) (*Service, error) {
 	client := slack.New(config.BotSigningKey)
 	if client == nil {
-		log.Fatal("NewService slack.New")
+		return nil, fmt.Errorf("NewService: couldn't generate slack client")
 	}
 	return &Service{
 		client,
 		config,
 		mealService,
 		memberService,
-	}
+	}, nil
 }
 
 // isEatingTomorrowBlock creates a 'who's eating' message to be sent into the slack channel.
