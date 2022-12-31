@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 )
 
 var daysWanted int64
@@ -20,8 +21,15 @@ func (c *UpcomingCooksCommand) Run(ctx context.Context, args []string) error {
 	fs := flag.NewFlagSet("", flag.ContinueOnError)
 	fs.Int64Var(&daysWanted, "days", 7, "list the next days' cooks")
 	attachConfigFlags(fs, &c.ConfigPath)
-	if err := fs.Parse(args); err != nil {
-		return fmt.Errorf("Run fs.Parse: %w", err)
+	fs.Usage = c.usage
+	err := fs.Parse(args)
+	if err != nil {
+		if err == flag.ErrHelp {
+			os.Exit(1)
+		} else {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
 	}
 
 	if daysWanted < 1 {

@@ -5,6 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"net/http"
+	"os"
 )
 
 // EatingTomorrowCommand is a command to send a 'who's eating tomorrow' message into Slack.
@@ -16,8 +17,15 @@ type EatingTomorrowCommand struct {
 func (c *EatingTomorrowCommand) Run(ctx context.Context, args []string) error {
 	fs := flag.NewFlagSet("", flag.ContinueOnError)
 	attachConfigFlags(fs, &c.ConfigPath)
-	if err := fs.Parse(args); err != nil {
-		return fmt.Errorf("Run fs.Parse: %w", err)
+	fs.Usage = c.usage
+	err := fs.Parse(args)
+	if err != nil {
+		if err == flag.ErrHelp {
+			os.Exit(1)
+		} else {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
 	}
 
 	// Load the configuration.

@@ -6,6 +6,7 @@ import (
 	"fmt"
 	"io"
 	"net/http"
+	"os"
 )
 
 // MembersCommand is a command to list the current members of dinner rotation.
@@ -17,8 +18,15 @@ type MembersCommand struct {
 func (c *MembersCommand) Run(ctx context.Context, args []string) error {
 	fs := flag.NewFlagSet("", flag.ContinueOnError)
 	attachConfigFlags(fs, &c.ConfigPath)
-	if err := fs.Parse(args); err != nil {
-		return fmt.Errorf("Run fs.Parse: %w", err)
+	fs.Usage = c.usage
+	err := fs.Parse(args)
+	if err != nil {
+		if err == flag.ErrHelp {
+			os.Exit(1)
+		} else {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
 	}
 
 	// Load the configuration.
