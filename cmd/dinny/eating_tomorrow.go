@@ -4,8 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
-
-	"github.com/ddritzenhoff/dinny/http/grpc/pb"
+	"net/http"
 )
 
 // EatingTomorrowCommand is a command to send a 'who's eating tomorrow' message into Slack.
@@ -27,16 +26,13 @@ func (c *EatingTomorrowCommand) Run(ctx context.Context, args []string) error {
 		return fmt.Errorf("Run ReadConfigFile: %w", err)
 	}
 
-	conn, err := generateGRPCClientConnectionWithAddress(config.URL)
+	url := fmt.Sprintf("%s/cmd/eating-tomorrow", config.URL)
+	resp, err := http.Get(url)
 	if err != nil {
-		return fmt.Errorf("Run generateGRPCClient: %w", err)
+		return fmt.Errorf("Run http.Get: %w", err)
 	}
-	defer conn.Close()
-	slackClient := pb.NewSlackActionsClient(conn)
-	_, err = slackClient.EatingTomorrow(context.Background(), &pb.EmptyMessage{})
-	if err != nil {
-		return fmt.Errorf("Run slackClient.EatingTomorrow: %w", err)
-	}
+	defer resp.Body.Close()
+	fmt.Println("success")
 	return nil
 }
 

@@ -1,7 +1,9 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
 	"os"
@@ -14,7 +16,7 @@ import (
 
 const (
 	DefaultURL        = "localhost:7777"
-	DefaultConfigPath = "~/dinny.conf"
+	DefaultConfigPath = "~/dinny.toml"
 )
 
 func main() {
@@ -115,4 +117,11 @@ func ReadConfigFile(filename string) (Config, error) {
 // attachConfigFlags adds a common "-config" flag to a flag set.
 func attachConfigFlags(fs *flag.FlagSet, p *string) {
 	fs.StringVar(p, "config", DefaultConfigPath, "config path")
+}
+
+// prettyPrint takes raw JSON bytes and converts into a more legible form.
+func prettyPrint(b []byte) ([]byte, error) {
+	var out bytes.Buffer
+	err := json.Indent(&out, b, "", "  ")
+	return out.Bytes(), err
 }

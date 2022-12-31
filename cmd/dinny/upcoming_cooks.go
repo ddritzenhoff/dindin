@@ -4,8 +4,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
-
-	"github.com/ddritzenhoff/dinny/http/grpc/pb"
+	"io"
+	"net/http"
 )
 
 var daysWanted int64
@@ -34,19 +34,21 @@ func (c *UpcomingCooksCommand) Run(ctx context.Context, args []string) error {
 		return fmt.Errorf("Run ReadConfigFile: %w", err)
 	}
 
-	conn, err := generateGRPCClientConnectionWithAddress(config.URL)
+	url := fmt.Sprintf("%s/cmd/upcoming-cooks", config.URL)
+	resp, err := http.Get(url)
 	if err != nil {
-		return fmt.Errorf("Run generateGRPCClientConnection: %w", err)
+		return fmt.Errorf("Run http.Get: %w", err)
 	}
-	defer conn.Close()
-	slackClient := pb.NewSlackActionsClient(conn)
-	r, err := slackClient.UpcomingCooks(context.Background(), &pb.UpcomingCooksRequest{DaysWanted: daysWanted})
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("Run slackClient.UpcomingCooks: %w", err)
+		return fmt.Errorf("Run io.ReadAll: %w", err)
 	}
-	for _, m := range r.Meals {
-		fmt.Printf("Name: %s\n\tSlackUID: %s,\n\tCooking Time: %s,\n\tDesc: %s,\n\tMessageID: %s,", m.FullName, m.CookSlack_UID, fmt.Sprintf("%d/%d/%d\n\t", m.Date.Month, m.Date.Day, m.Date.Year), m.Description, m.SlackMessage_ID)
+	b, err := prettyPrint(body)
+	if err != nil {
+		return fmt.Errorf("Run prettyPrint: %w", err)
 	}
+	fmt.Println(string(b))
 	return nil
 }
 

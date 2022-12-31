@@ -5,9 +5,7 @@ import (
 	"flag"
 	"fmt"
 	"io"
-	"log"
-
-	"github.com/ddritzenhoff/dinny/http/grpc/pb"
+	"net/http"
 )
 
 // MembersCommand is a command to list the current members of dinner rotation.
@@ -29,26 +27,21 @@ func (c *MembersCommand) Run(ctx context.Context, args []string) error {
 		return fmt.Errorf("Run ReadConfigFile: %w", err)
 	}
 
-	conn, err := generateGRPCClientConnectionWithAddress(config.URL)
+	url := fmt.Sprintf("%s/cmd/members", config.URL)
+	resp, err := http.Get(url)
 	if err != nil {
-		return fmt.Errorf("Run generateGRPCClient: %w", err)
+		return fmt.Errorf("Run http.Get: %w", err)
 	}
-	defer conn.Close()
-	slackClient := pb.NewSlackActionsClient(conn)
-	stream, err := slackClient.GetMembers(context.Background(), &pb.EmptyMessage{})
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("Run client.GetMembers: %w", err)
+		return fmt.Errorf("Run io.ReadAll: %w", err)
 	}
-	for {
-		memberInfo, err := stream.Recv()
-		if err == io.EOF {
-			break
-		}
-		if err != nil {
-			log.Fatalf("client.GetMembers failed: %v", err)
-		}
-		log.Printf("Full Name: %s\nSlackUID: %s\n\n", memberInfo.GetFullName(), memberInfo.GetSlack_UID())
+	b, err := prettyPrint(body)
+	if err != nil {
+		return fmt.Errorf("Run prettyPrint: %w", err)
 	}
+	fmt.Println(string(b))
 	return nil
 }
 
@@ -60,5 +53,5 @@ List the current members of dinner rotation.
 Usage:
 
 		dinny members
-	`[1:])
+`[1:])
 }

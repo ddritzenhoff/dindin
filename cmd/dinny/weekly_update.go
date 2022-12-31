@@ -4,9 +4,7 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
-
-	"github.com/ddritzenhoff/dinny/http/grpc/pb"
+	"net/http"
 )
 
 // WeeklyUpdateCommand is a command to send a message into slack with each member's meals eaten to meals cooked ratio.
@@ -28,16 +26,12 @@ func (c *WeeklyUpdateCommand) Run(ctx context.Context, args []string) error {
 		return fmt.Errorf("Run ReadConfigFile: %w", err)
 	}
 
-	conn, err := generateGRPCClientConnectionWithAddress(config.URL)
+	url := fmt.Sprintf("%s/cmd/weekly-update", config.URL)
+	resp, err := http.Get(url)
 	if err != nil {
-		return fmt.Errorf("Run generateGRPCClientConnection: %w", err)
+		return fmt.Errorf("Run http.Get: %w", err)
 	}
-	defer conn.Close()
-	slackClient := pb.NewSlackActionsClient(conn)
-	_, err = slackClient.WeeklyUpdate(context.Background(), &pb.EmptyMessage{})
-	if err != nil {
-		log.Fatal(err)
-	}
+	defer resp.Body.Close()
 	fmt.Println("success")
 	return nil
 }

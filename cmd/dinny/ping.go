@@ -4,8 +4,8 @@ import (
 	"context"
 	"flag"
 	"fmt"
-
-	"github.com/ddritzenhoff/dinny/http/grpc/pb"
+	"io"
+	"net/http"
 )
 
 // PingCommand is a command to ping the dinny service to check health.
@@ -27,18 +27,17 @@ func (c *PingCommand) Run(ctx context.Context, args []string) error {
 		return fmt.Errorf("Run ReadConfigFile: %w", err)
 	}
 
-	conn, err := generateGRPCClientConnectionWithAddress(config.URL)
+	url := fmt.Sprintf("%s/cmd/ping", config.URL)
+	resp, err := http.Get(url)
 	if err != nil {
-		return fmt.Errorf("Run generateGRPCClient: %w", err)
+		return fmt.Errorf("Run http.Get: %w", err)
 	}
-	defer conn.Close()
-	slackClient := pb.NewSlackActionsClient(conn)
-	msg, err := slackClient.Ping(context.Background(), &pb.EmptyMessage{})
+	defer resp.Body.Close()
+	body, err := io.ReadAll(resp.Body)
 	if err != nil {
-		return fmt.Errorf("Run slackClient.Ping: %w", err)
-	} else {
-		fmt.Printf("%s\n", msg.GetMessage())
+		return fmt.Errorf("Run io.ReadAll: %w", err)
 	}
+	fmt.Println(string(body))
 	return nil
 }
 

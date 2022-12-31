@@ -1,12 +1,17 @@
 package main
 
 import (
+	"bytes"
 	"context"
+	"encoding/json"
 	"flag"
 	"fmt"
+	"io"
+	"net/http"
 	"time"
 
-	"github.com/ddritzenhoff/dinny/http/grpc/pb"
+	"github.com/ddritzenhoff/dinny"
+	rest "github.com/ddritzenhoff/dinny/http"
 )
 
 var mondaySlackUID string
@@ -43,47 +48,57 @@ func (c *AssignCooksCommand) Run(ctx context.Context, args []string) error {
 		return fmt.Errorf("Run ReadConfigFile: %w", err)
 	}
 
-	conn, err := generateGRPCClientConnectionWithAddress(config.URL)
-	if err != nil {
-		return fmt.Errorf("Run generateGRPCClientConnection: %w", err)
-	}
-	defer conn.Close()
-
 	now := time.Now()
-	var assignments []*pb.CookAssignment
+	var request rest.AssignCooksRequest
 
 	if sundaySlackUID != "" {
-		assignments = append(assignments, buildCookAssignment(now, time.Sunday, sundaySlackUID))
+		request.CookAssignments = append(request.CookAssignments, buildCookAssignment(now, time.Sunday, sundaySlackUID))
 	}
 	if mondaySlackUID != "" {
-		assignments = append(assignments, buildCookAssignment(now, time.Monday, mondaySlackUID))
+		request.CookAssignments = append(request.CookAssignments, buildCookAssignment(now, time.Monday, mondaySlackUID))
 	}
 	if tuesdaySlackUID != "" {
-		assignments = append(assignments, buildCookAssignment(now, time.Tuesday, tuesdaySlackUID))
+		request.CookAssignments = append(request.CookAssignments, buildCookAssignment(now, time.Tuesday, tuesdaySlackUID))
 	}
 	if wednesdaySlackUID != "" {
-		assignments = append(assignments, buildCookAssignment(now, time.Wednesday, wednesdaySlackUID))
+		request.CookAssignments = append(request.CookAssignments, buildCookAssignment(now, time.Wednesday, wednesdaySlackUID))
 	}
 	if thursdaySlackUID != "" {
-		assignments = append(assignments, buildCookAssignment(now, time.Thursday, thursdaySlackUID))
+		request.CookAssignments = append(request.CookAssignments, buildCookAssignment(now, time.Thursday, thursdaySlackUID))
 	}
 	if fridaySlackUID != "" {
-		assignments = append(assignments, buildCookAssignment(now, time.Friday, fridaySlackUID))
+		request.CookAssignments = append(request.CookAssignments, buildCookAssignment(now, time.Friday, fridaySlackUID))
 	}
 	if saturdaySlackUID != "" {
-		assignments = append(assignments, buildCookAssignment(now, time.Saturday, saturdaySlackUID))
+		request.CookAssignments = append(request.CookAssignments, buildCookAssignment(now, time.Saturday, saturdaySlackUID))
 	}
 
-	if len(assignments) == 0 {
-		return fmt.Errorf("Run: didn't specify any days, so nothing happened..")
+	if len(request.CookAssignments) == 0 {
+		return fmt.Errorf("Run: didn't specify any days, so nothing happened")
 	}
 
-	slackActionsClient := pb.NewSlackActionsClient(conn)
-	_, err = slackActionsClient.AssignCooks(context.Background(), &pb.AssignCooksRequest{Assignments: assignments})
+	buf, err := json.Marshal(request)
 	if err != nil {
-		return fmt.Errorf("Run slackActionsClient.AssignCooks: %w", err)
+		return fmt.Errorf("Run json.Marshal: %w", err)
 	}
+	responseBody := bytes.NewBuffer(buf)
 
+	url := fmt.Sprintf("%s/cmd/assign-cooks", config.URL)
+	resp, err := http.Post(url, "application/json", responseBody)
+	if err != nil {
+		return fmt.Errorf("Run http.Post: %w", err)
+	}
+	defer resp.Body.Close()
+
+	body, err := io.ReadAll(resp.Body)
+	if err != nil {
+		return fmt.Errorf("Run io.ReadAll: %w", err)
+	}
+	b, err := prettyPrint(body)
+	if err != nil {
+		return fmt.Errorf("Run prettyPrint: %w", err)
+	}
+	fmt.Println(string(b))
 	return nil
 }
 
@@ -94,15 +109,15 @@ func getDayDifference(now time.Weekday, then time.Weekday) int {
 }
 
 // buildCookAssignment creates a pb.CookAssignment.
-func buildCookAssignment(now time.Time, then time.Weekday, slackUID string) *pb.CookAssignment {
+func buildCookAssignment(now time.Time, then time.Weekday, cookSlackUID string) rest.CookAssignment {
 	year, month, day := now.AddDate(0, 0, getDayDifference(now.Weekday(), then)).Date()
-	return &pb.CookAssignment{
-		Date: &pb.Date{
-			Year:  int64(year),
-			Month: int64(month),
-			Day:   int64(day),
+	return rest.CookAssignment{
+		Date: dinny.Date{
+			Year:  year,
+			Month: month,
+			Day:   day,
 		},
-		Slack_UID: slackUID,
+		CookSlackUID: cookSlackUID,
 	}
 }
 

@@ -1,1 +1,2 @@
-TODO (ddritzenhoff) create a sample config file.
+# url represents the address of the dinny server.
+url = "localhost:7777"
