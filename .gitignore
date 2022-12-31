@@ -4,3 +4,5 @@ config.yaml
 /cmd/dinnyd/dinnyd
 server
 dindin.db
+Dockerfile
+.vscode
