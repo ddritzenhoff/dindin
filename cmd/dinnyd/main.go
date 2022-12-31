@@ -14,8 +14,7 @@ import (
 
 	"github.com/pelletier/go-toml/v2"
 
-	"github.com/ddritzenhoff/dinny/http/grpc"
-	"github.com/ddritzenhoff/dinny/http/rest"
+	rest "github.com/ddritzenhoff/dinny/http"
 	"github.com/ddritzenhoff/dinny/slack"
 	"github.com/ddritzenhoff/dinny/sqlite"
 	"github.com/ddritzenhoff/dinny/sqlite/gen"
@@ -30,18 +29,19 @@ func main() {
 	signal.Notify(c, os.Interrupt)
 	go func() { <-c; cancel() }()
 
-	m := NewMain()
-
 	// Parse command line flag and load configuration.
-	if err := m.ParseFlag(context.Background(), os.Args[1:]); err == flag.ErrHelp {
-		os.Exit(1)
-	} else if err != nil {
-		fmt.Fprintln(os.Stderr, err)
-		os.Exit(1)
+	config, err := ParseFlag(context.Background(), os.Args[1:])
+	if err != nil {
+		if err == flag.ErrHelp {
+			os.Exit(1)
+		} else {
+			fmt.Fprintln(os.Stderr, err)
+			os.Exit(1)
+		}
 	}
 
 	// Execute program.
-	if err := m.Run(); err != nil {
+	if err := Run(config); err != nil {
 		log.Fatal(err)
 	}
 
@@ -52,51 +52,35 @@ func main() {
 	// TODO (ddritzenhoff)
 }
 
-// Main represents the program
-type Main struct {
-	// Configuration path and parsed config data.
-	Config     Config
-	ConfigPath string
-}
-
-// NewMain returns a new instance of Main.
-func NewMain() *Main {
-	return &Main{
-		ConfigPath: DefaultConfigPath,
-	}
-}
-
 // ParseFlag parses the config flag and loads the config.
-func (m *Main) ParseFlag(context context.Context, args []string) error {
-	fs := flag.NewFlagSet("dinnyd", flag.ExitOnError)
+func ParseFlag(context context.Context, args []string) (*Config, error) {
+	fs := flag.NewFlagSet("dinnyd", flag.ContinueOnError)
 	var configPath string
 	fs.StringVar(&configPath, "config", DefaultConfigPath, "config path")
 	if err := fs.Parse(args); err != nil {
-		return err
+		return nil, fmt.Errorf("ParseFlag fs.Parse: %w", err)
 	}
 
 	// The expand() function is here to automatically expand "~" to the user's
 	// home directory.
 	configPath, err := expand(configPath)
 	if err != nil {
-		return err
+		return nil, fmt.Errorf("ParseFlag expand: %w", err)
 	}
 
 	// Read the TOML formatted configuration file.
 	config, err := ReadConfigFile(configPath)
 	if err != nil {
-		return fmt.Errorf("ParseFlag ReadConfigFile: %w", err)
+		return nil, fmt.Errorf("ParseFlag ReadConfigFile: %w", err)
 	}
-	m.Config = config
-
-	return nil
+	return &config, nil
 }
 
 // run initializes the member, meal, and Slack services and starts the REST and GRPC servers.
-func (m *Main) Run() error {
+func Run(config *Config) error {
 	logger := log.New(os.Stdout, "DEBUG: ", log.LstdFlags)
 
-	DSNPath, err := expandDSN(m.Config.DB.DSN)
+	DSNPath, err := expandDSN(config.DB.DSN)
 	if err != nil {
 		return fmt.Errorf("Run expandDSN: %w", err)
 	}
@@ -105,7 +89,6 @@ func (m *Main) Run() error {
 	if err != nil {
 		return fmt.Errorf("Run sqlite.Open: %w", err)
 	}
-	defer db.Close()
 
 	queries := gen.New(db)
 
@@ -114,8 +97,8 @@ func (m *Main) Run() error {
 	memberService := sqlite.NewMemberService(queries, db)
 
 	slackConfig := slack.Config{
-		Channel:       m.Config.Slack.ChannelID,
-		BotSigningKey: m.Config.Slack.BotSigningKey,
+		Channel:       config.Slack.ChannelID,
+		BotSigningKey: config.Slack.BotSigningKey,
 	}
 
 	slackService, err := slack.NewService(&slackConfig, mealService, memberService)
@@ -123,26 +106,15 @@ func (m *Main) Run() error {
 		return fmt.Errorf("Run slack.NewService: %w", err)
 	}
 
-	restCfg := rest.Config{
-		Host: m.Config.HTTP.REST.Host,
-		Port: m.Config.HTTP.REST.Port,
-	}
-	restServer := rest.NewServer(logger, &restCfg, memberService, slackService)
-	go restServer.Start()
-
-	grpcCfg := grpc.Config{
-		Host: m.Config.HTTP.GRPC.Host,
-		Port: m.Config.HTTP.REST.Port,
-	}
-	grpcServer := grpc.NewServer(logger, &grpcCfg, mealService, memberService, slackService)
-	go grpcServer.Start()
+	restServer := rest.NewServer(logger, config.HTTP.URL, memberService, mealService, slackService)
+	restServer.Open()
 
 	return nil
 }
 
 const (
 	// DefaultConfigPath is the the default path to the application configuration.
-	DefaultConfigPath = "~/dinnyd.conf"
+	DefaultConfigPath = "~/dinnyd.toml"
 
 	// DefaultDSN is the default datasource name.
 	DefaultDSN = "~/.dinnyd/db"
@@ -155,14 +127,7 @@ type Config struct {
 	} `toml:"db"`
 
 	HTTP struct {
-		REST struct {
-			Host string `toml:"host"`
-			Port string `toml:"port"`
-		} `toml:"rest"`
-		GRPC struct {
-			Host string `toml:"host"`
-			Port string `toml:"port"`
-		} `toml:"grpc"`
+		URL string `toml:"url"`
 	} `toml:"http"`
 
 	Slack struct {
@@ -206,9 +171,9 @@ func expand(path string) (string, error) {
 	// Fetch the current user to determine the home path.
 	u, err := user.Current()
 	if err != nil {
-		return path, err
+		return path, fmt.Errorf("expand user.Current: %w", err)
 	} else if u.HomeDir == "" {
-		return path, fmt.Errorf("home directory unset")
+		return path, fmt.Errorf("expand u.HomeDir: home directory unset")
 	}
 
 	if path == "~" {

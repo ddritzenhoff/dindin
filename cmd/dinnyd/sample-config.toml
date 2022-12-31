@@ -1,15 +1,12 @@
-[http.rest]
-host = "localhost"
-port = 7777
-
-[http.grpc]
-host = "localhost"
-port = 7778
+[http]
+# url represents the address the dinny server will listen on.
+url = "localhost:7777"
 
 [db]
-dsn = "dinny.db"
+# the data source name (dsn) represents the path to your db.
+dsn = "~/dinny.db"
 
-# these are your slack configuration values. You can get these from slack api app homepage.
+# These values represent the slack app's configuration values and can be retrieved from the app's Slack API homepage.
 [slack]
 botSigningKey = ""
 appID = ""
