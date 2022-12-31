@@ -1,6 +1,7 @@
 package slack
 
 import (
+	"errors"
 	"fmt"
 	"math"
 	"sort"
@@ -8,7 +9,16 @@ import (
 
 	"github.com/ddritzenhoff/dinny"
 	"github.com/slack-go/slack"
+	"github.com/slack-go/slack/slackevents"
 )
+
+// Service represents the service to communicate with the Slack API.
+type Service interface {
+	PostEatingTomorrow() error
+	WeeklyUpdate() error
+	ReactionAddedEvent(e *slackevents.ReactionAddedEvent) error
+	ReactionRemovedEvent(e *slackevents.ReactionRemovedEvent) error
+}
 
 // Config represents the configuration values to communicate with the slack API.
 type Config struct {
@@ -16,8 +26,8 @@ type Config struct {
 	BotSigningKey string
 }
 
-// Service represents the service to communciate with the slack API.
-type Service struct {
+// service represents the implementation of the Service interface.
+type service struct {
 	client        *slack.Client
 	config        *Config
 	mealService   dinny.MealService
@@ -25,12 +35,12 @@ type Service struct {
 }
 
 // NewService returns a new instance of slack.Service.
-func NewService(config *Config, mealService dinny.MealService, memberService dinny.MemberService) (*Service, error) {
+func NewService(config *Config, mealService dinny.MealService, memberService dinny.MemberService) (*service, error) {
 	client := slack.New(config.BotSigningKey)
 	if client == nil {
 		return nil, fmt.Errorf("NewService: couldn't generate slack client")
 	}
-	return &Service{
+	return &service{
 		client,
 		config,
 		mealService,
@@ -50,7 +60,7 @@ func isEatingTomorrowBlock() slack.MsgOption {
 }
 
 // PostEatingTomorrow sends the 'who's eating' messages into the slack channel.
-func (s *Service) PostEatingTomorrow() error {
+func (s *service) PostEatingTomorrow() error {
 	year, month, day := time.Now().AddDate(0, 0, 1).Date()
 	meal, err := s.mealService.FindMealByDate(dinny.Date{Year: year, Month: month, Day: day})
 	if err != nil {
@@ -126,7 +136,7 @@ func weeklyUpdateBlock(members []*dinny.Member) slack.MsgOption {
 }
 
 // WeeklyUpdate sends the weeklyUpdateBlock into Slack.
-func (s *Service) WeeklyUpdate() error {
+func (s *service) WeeklyUpdate() error {
 	members, err := s.memberService.ListMembers()
 	if err != nil {
 		return fmt.Errorf("WeeklyUpdate ListMembers: %w", err)
@@ -139,6 +149,108 @@ func (s *Service) WeeklyUpdate() error {
 	_, _, err = s.client.PostMessage(s.config.Channel, weeklyUpdateBlock(members))
 	if err != nil {
 		return fmt.Errorf("WeeklyUpdate PostMessage: %w", err)
+	}
+	return nil
+}
+
+// ReactionAddedEvent adds 1 to the Slack member's meals_eaten if a valid 'is eating' message were liked.
+func (s *service) ReactionAddedEvent(e *slackevents.ReactionAddedEvent) error {
+	// Don't bother if the reaction isn't a like
+	if e.Reaction != "+1" {
+		return fmt.Errorf("ReactionAddedEvent +1: got %s in channel %s from user %s", e.Reaction, e.Item.Channel, e.User)
+	}
+
+	// check to see whether the reaction was on a 'who's eating tomorrow' post
+	slackMessageID := e.Item.Timestamp
+	meal, err := s.mealService.FindMealBySlackMessageID(slackMessageID)
+	if err != nil {
+		return fmt.Errorf("ReactionAddedEvent GetEatingEvent: got %s in channel %s from user %s with timestamp %s", e.Reaction, e.Item.Channel, e.User, e.Item.Timestamp)
+	}
+
+	// if the reaction was on an expired 'who's eating tomorrow' post, don't do anything
+	if meal.Expired() {
+		return fmt.Errorf("ReactionAddedEvent IsEatingMessageExpired: slackMessageID: %s", slackMessageID)
+	}
+
+	// add the member if he doesn't exist yet
+	slackUID := e.User
+	member, err := s.memberService.FindMemberBySlackUID(slackUID)
+	if errors.Is(err, dinny.ErrNotFound) {
+		userInfo, err := s.client.GetUserInfo(slackUID)
+		if err != nil {
+			return fmt.Errorf("ReactionAddedEvent GetUserInfo: %w", err)
+		}
+		err = s.memberService.CreateMember(&dinny.Member{
+			SlackUID: slackUID,
+			FullName: userInfo.RealName,
+		})
+		if err != nil {
+			return fmt.Errorf("ReactionAddedEvent CreateMember: %w", err)
+		}
+	} else if err != nil {
+		return fmt.Errorf("ReactionAddedEvent FindMemberBySlackUID: %w", err)
+	}
+
+	// update the member's meals eaten
+	newMealsEaten := member.MealsEaten + 1
+	err = s.memberService.UpdateMember(member.ID, dinny.MemberUpdate{
+		MealsEaten: &newMealsEaten,
+	})
+	if err != nil {
+		return fmt.Errorf("ReactionAddedEvent UpdateMember: %w", err)
+	}
+	return nil
+}
+
+// ReactionAddedEvent adds 1 to the Slack member's meals_eaten if a valid 'is eating' message were un-liked.
+func (s *service) ReactionRemovedEvent(e *slackevents.ReactionRemovedEvent) error {
+	// Don't bother if the reaction isn't a like
+	if e.Reaction != "+1" {
+		return fmt.Errorf("ReactionRemovedEvent +1: got %s in channel %s from user %s", e.Reaction, e.Item.Channel, e.User)
+	}
+
+	// check to see whether the reaction was on a 'who's eating tomorrow' post
+	slackMessageID := e.Item.Timestamp
+	meal, err := s.mealService.FindMealBySlackMessageID(slackMessageID)
+	if err != nil {
+		return fmt.Errorf("ReactionRemovedEvent GetEatingEvent: got %s in channel %s from user %s with timestamp %s", e.Reaction, e.Item.Channel, e.User, e.Item.Timestamp)
+	}
+
+	// if the reaction was on an expired 'who's eating tomorrow' post, don't do anything
+	if meal.Expired() {
+		return fmt.Errorf("ReactionRemovedEvent IsEatingMessageExpired: slackMessageID: %s", slackMessageID)
+	}
+
+	// add the member if he doesn't exist yet
+	slackUID := e.User
+	member, err := s.memberService.FindMemberBySlackUID(slackUID)
+	if errors.Is(err, dinny.ErrNotFound) {
+		userInfo, err := s.client.GetUserInfo(slackUID)
+		if err != nil {
+			return fmt.Errorf("ReactionRemovedEvent GetUserInfo: %w", err)
+		}
+		err = s.memberService.CreateMember(&dinny.Member{
+			SlackUID: slackUID,
+			FullName: userInfo.RealName,
+		})
+		if err != nil {
+			return fmt.Errorf("ReactionRemovedEvent CreateMember: %w", err)
+		}
+	} else if err != nil {
+		return fmt.Errorf("ReactionRemovedEvent FindMemberBySlackUID: %w", err)
+	}
+
+	// update the member's meals eaten
+
+	newMealsEaten := member.MealsEaten + 1
+	if newMealsEaten < 0 {
+		newMealsEaten = 0
+	}
+	err = s.memberService.UpdateMember(member.ID, dinny.MemberUpdate{
+		MealsEaten: &newMealsEaten,
+	})
+	if err != nil {
+		return fmt.Errorf("ReactionRemovedEvent UpdateMember: %w", err)
 	}
 	return nil
 }
