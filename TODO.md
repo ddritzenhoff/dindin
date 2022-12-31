@@ -13,4 +13,4 @@
 - [X] Upgrade to version 1.19
 - [X] Change name to Dinny
 - [X] Change the way the config file is passed in
-- [ ] Migrate off of grpc and move to http methods. This just makes everything a bit simpler.
+- [X] Migrate off of grpc and move to http methods.
