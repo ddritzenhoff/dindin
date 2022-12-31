@@ -4,18 +4,18 @@ import "time"
 
 // Date represents the year, month, and day of the meal.
 type Date struct {
-	Year  int
-	Month time.Month
-	Day   int
+	Year  int        `json:"year"`
+	Month time.Month `json:"month"`
+	Day   int        `json:"day"`
 }
 
 // Meal represents a meal in dinner rotation.
 type Meal struct {
-	ID             int64
-	CookSlackUID   string
-	Date           Date
-	Description    string
-	SlackMessageID string
+	ID             int64  `json:"id"`
+	CookSlackUID   string `json:"cookSlackUID"`
+	Date           Date   `json:"date"`
+	Description    string `json:"description"`
+	SlackMessageID string `json:"slackMessageID"`
 }
 
 // Expired determines if a meal is expired if it's after the date the meal was supposed to occur.

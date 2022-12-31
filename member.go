@@ -2,12 +2,12 @@ package dinny
 
 // Member represents a member of dinner rotation.
 type Member struct {
-	ID          int64
-	SlackUID    string
-	FullName    string
-	MealsEaten  int64
-	MealsCooked int64
-	Leader      bool
+	ID          int64  `json:"id"`
+	SlackUID    string `json:"slackUID"`
+	FullName    string `json:"fullName"`
+	MealsEaten  int64  `json:"mealsEaten"`
+	MealsCooked int64  `json:"mealsCooked"`
+	Leader      bool   `json:"leader"`
 }
 
 // MemberService represents a service for managing members.
